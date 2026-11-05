@@ -527,7 +527,8 @@ DCE Lab deploys as **two Vercel projects** from this one repository: the API (`s
 
 **3. Website project** (Add New -> Project -> import the same repo again)
 
-- **Root Directory:** `client` (Framework preset: *Vite*).
+- **Root Directory:** `client` (Framework preset: *Vite*). Leaving the Root Directory empty also works, because the
+  `vercel.json` at the repository root builds the client.
 - **Environment variable:** `VITE_API_URL` = `https://<api-project>.vercel.app/api`.
 - Deploy. Then go back to the API project, set `CLIENT_URL` to the website URL if you had not yet, and redeploy.
 
