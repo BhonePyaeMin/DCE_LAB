@@ -1,4 +1,9 @@
 # DCE Lab
+
+<p align="center">
+  <img src="./DCE%20LAB.png" alt="DCE Lab Logo" width="220" />
+</p>
+
 ### Laboratory & Equipment Management System
 
 A centralized laboratory management platform designed for the Digital and Communication Engineering (DCE) department. DCE Lab simplifies laboratory reservations, equipment borrowing, inventory tracking, and laboratory operations through a modern web-based system.
