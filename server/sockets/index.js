@@ -5,7 +5,7 @@ import { userFromToken } from '../middleware/auth.js';
 let io = null;
 
 export function initSockets(httpServer) {
-  io = new Server(httpServer, { cors: { origin: env.CLIENT_URL, credentials: true } });
+  io = new Server(httpServer, { cors: { origin: env.CLIENT_ORIGINS, credentials: true } });
 
   io.use(async (socket, next) => {
     try {

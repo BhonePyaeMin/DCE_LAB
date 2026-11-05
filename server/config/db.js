@@ -1,3 +1,4 @@
+import dns from 'node:dns';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
@@ -5,6 +6,9 @@ import mongoose from 'mongoose';
 import { env } from './env.js';
 
 let memoryServer = null;
+
+// Some networks block the SRV lookups that mongodb+srv:// URIs need. DNS_SERVERS=8.8.8.8,1.1.1.1 works around it.
+if (process.env.DNS_SERVERS) dns.setServers(process.env.DNS_SERVERS.split(',').map((s) => s.trim()).filter(Boolean));
 
 /**
  * Connects to MongoDB. When MONGODB_URI is empty (development / test only) an embedded

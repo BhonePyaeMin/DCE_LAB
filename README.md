@@ -495,7 +495,62 @@ running `npm run seed`, because both use the same embedded database folder.
 | Variable | Purpose |
 |---|---|
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Store uploaded images on Cloudinary. Without them images are saved in `server/uploads`. |
-| `SERVER_URL` | Public API origin prefixed to local upload URLs when the client and API are on different origins. |
+| `SERVER_URL` | Public API origin prefixed to uploaded image URLs when the client and API are on different origins. |
+| `CRON_SECRET` | Enables `GET /api/cron/run` (bearer token) for hosts that cannot run timers. |
+| `DNS_SERVERS` | Public DNS servers for `mongodb+srv://` lookups on networks that block SRV records. |
+
+### Deploying to Vercel
+
+DCE Lab deploys as **two Vercel projects** from this one repository: the API (`server`) and the website
+(`client`). MongoDB Atlas hosts the data.
+
+**1. MongoDB Atlas**
+
+- Create a database user and copy the connection string, adding a database name before the `?`, for example
+  `mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/dcelab?retryWrites=true&w=majority`.
+- Under **Network Access**, allow `0.0.0.0/0` (Vercel functions have no fixed IP address).
+
+**2. API project** (Vercel -> Add New -> Project -> import this repo)
+
+- **Root Directory:** `server` (Framework preset: *Other*; leave the build command empty).
+- **Environment variables:**
+
+| Name | Value |
+|---|---|
+| `MONGODB_URI` | the Atlas connection string from step 1 |
+| `JWT_SECRET` | a long random string |
+| `CLIENT_URL` | the URL of the website project, e.g. `https://dce-lab.vercel.app` (comma separate several) |
+| `SERVER_URL` | the URL of this API project, e.g. `https://dce-lab-api.vercel.app` |
+| `CRON_SECRET` | a random string; Vercel Cron sends it to run the daily overdue/reminder job |
+
+- Deploy, then open `https://<api-project>.vercel.app/api/health` to check it answers `{"success":true}`.
+
+**3. Website project** (Add New -> Project -> import the same repo again)
+
+- **Root Directory:** `client` (Framework preset: *Vite*).
+- **Environment variable:** `VITE_API_URL` = `https://<api-project>.vercel.app/api`.
+- Deploy. Then go back to the API project, set `CLIENT_URL` to the website URL if you had not yet, and redeploy.
+
+**4. Create the first administrator** (run once from your own computer; the credentials stay out of git):
+
+```bash
+cd server
+MONGODB_URI="<atlas connection string>" ADMIN_EMAIL="you@example.com" ADMIN_PASSWORD="<password>" ADMIN_NAME="Your Name" npm run create-admin
+```
+
+On Windows PowerShell set the variables first, for example `$env:MONGODB_URI="..."`, then run `npm run create-admin`.
+If `mongodb+srv` lookups fail on your network, also set `DNS_SERVERS=8.8.8.8,1.1.1.1`.
+
+**Things that differ on Vercel**
+
+- Real-time sockets are not available on serverless hosting, so the website refreshes lists and notifications every
+  30 seconds instead (locally it still uses Socket.IO).
+- Uploaded photos are stored in MongoDB and served from `/api/files/...` (use Cloudinary instead by setting its three
+  variables). Vercel limits a request body to about 4.5 MB, so uploads are capped at 4 MB.
+- The overdue and reminder job runs once a day through Vercel Cron (`server/vercel.json`); the Hobby plan allows daily runs.
+- Do not run `npm run seed` against production; it deletes data and creates demo accounts.
+
+---
 
 ### API Overview
 
@@ -510,6 +565,7 @@ All endpoints live under `/api` and (except login and registration) require a `B
 | Borrowings | `GET/POST /borrowings`, `GET /borrowings/calendar`, staff: `PATCH /:id/review`, `/collect`, `/return`; `PATCH /:id/cancel` |
 | Maintenance | `GET/POST /maintenance`, `GET /maintenance/:id`, staff: `PATCH /:id` |
 | Notifications | `GET /notifications`, `PATCH /:id/read`, `PATCH /read-all`, `DELETE /:id` |
+| Files | `GET /files/:id` (images stored in MongoDB in production) |
 | Analytics | `GET /analytics/dashboard`, `GET /analytics/reports`, admin: `GET /analytics/reports/export/:type` |
 
 ### How Stock Is Tracked

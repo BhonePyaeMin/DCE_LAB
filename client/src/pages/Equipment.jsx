@@ -77,7 +77,7 @@ function EquipmentForm({ item, categories, onClose, onSaved }) {
       }
     >
       <form id="equipment-form" onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-        <Field label={item ? 'Photo' : 'Photo (required)'} hint={item ? 'Choose a file to replace the current photo.' : 'JPEG, PNG or WebP, up to 5 MB.'} className="sm:col-span-2">
+        <Field label={item ? 'Photo' : 'Photo (required)'} hint={item ? 'Choose a file to replace the current photo.' : 'JPEG, PNG or WebP, up to 4 MB.'} className="sm:col-span-2">
           <div className="flex items-center gap-4">
             {shownImage ? (
               <EquipmentImage key={shownImage} item={{ category: form.category, image: shownImage }} alt="Equipment preview" className="h-20 w-28 shrink-0 rounded border border-slate-200" />

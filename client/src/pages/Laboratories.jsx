@@ -86,7 +86,7 @@ function LabForm({ lab, onClose, onSaved }) {
             <option value="closed">Closed</option>
           </select>
         </Field>
-        <Field label="Photo" hint="JPEG, PNG or WebP, up to 5 MB.">
+        <Field label="Photo" hint="JPEG, PNG or WebP, up to 4 MB.">
           <input className="input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </Field>
       </form>

@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "seed": "node utils/seed.js",
+    "create-admin": "node utils/createAdmin.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js"
   },
   "engines": {

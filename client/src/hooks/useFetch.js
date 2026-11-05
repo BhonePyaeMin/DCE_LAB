@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api, { errorMessage } from '../services/api.js';
-import { getSocket } from '../services/socket.js';
+import { getSocket, POLL_INTERVAL_MS, realtimeEnabled } from '../services/socket.js';
 
 /**
  * Fetches `url` (re-fetching when `params` change) and refreshes automatically when the server reports
@@ -38,8 +38,14 @@ export function useFetch(url, { params, watch = [], enabled = true } = {}) {
 
   const watchKey = watch.join(',');
   useEffect(() => {
+    if (!watchKey) return undefined;
+    if (!realtimeEnabled) {
+      // No socket available: refresh quietly while the tab is visible.
+      const timer = setInterval(() => document.visibilityState === 'visible' && load({ silent: true }), POLL_INTERVAL_MS);
+      return () => clearInterval(timer);
+    }
     const socket = getSocket();
-    if (!socket || !watchKey) return undefined;
+    if (!socket) return undefined;
     const resources = watchKey.split(',');
     const onChange = (evt) => resources.includes(evt.resource) && load({ silent: true });
     socket.on('data:changed', onChange);

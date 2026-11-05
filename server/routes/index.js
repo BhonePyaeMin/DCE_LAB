@@ -7,6 +7,8 @@ import borrowingRoutes from './borrowingRoutes.js';
 import maintenanceRoutes from './maintenanceRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
 import analyticsRoutes from './analyticsRoutes.js';
+import fileRoutes from './fileRoutes.js';
+import cronRoutes from './cronRoutes.js';
 
 const router = Router();
 
@@ -19,5 +21,7 @@ router.use('/borrowings', borrowingRoutes);
 router.use('/maintenance', maintenanceRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/files', fileRoutes);
+router.use('/cron', cronRoutes);
 
 export default router;

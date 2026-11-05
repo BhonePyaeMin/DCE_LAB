@@ -275,3 +275,37 @@ test('security: operator injection and mass assignment are neutralised', async (
   assert.equal(res.status, 200);
   assert.equal(res.body.user.role, 'student');
 });
+
+test('production storage: images are kept in MongoDB and served by /api/files; cron is protected', async () => {
+  const { env } = await import('../config/env.js');
+  env.isProd = true; // exercise the serverless code path (no writable disk)
+  try {
+    const fields = { name: 'Stored Image Item', category: 'Laboratory Tools', quantity: 1 };
+    const res = await api('POST', '/equipment', { token: tokens.admin, form: equipmentForm(fields) });
+    assert.equal(res.status, 201);
+    assert.match(res.body.equipment.image, /\/api\/files\/[0-9a-f]{24}$/);
+
+    const file = await fetch(`${base}${res.body.equipment.image.replace(/^https?:\/\/[^/]+/, '')}`);
+    assert.equal(file.status, 200);
+    assert.equal(file.headers.get('content-type'), 'image/png');
+    assert.equal(file.headers.get('x-content-type-options'), 'nosniff');
+    assert.deepEqual(Buffer.from(await file.arrayBuffer()), PNG);
+
+    assert.equal((await fetch(`${base}/api/files/not-an-id`)).status, 400);
+  } finally {
+    env.isProd = false;
+  }
+
+  // Cron endpoint: disabled without a secret, rejects wrong secrets, runs with the right one.
+  const { env: e2 } = await import('../config/env.js');
+  assert.equal((await api('GET', '/cron/run')).status, 404);
+  e2.CRON_SECRET = 'test-secret';
+  try {
+    assert.equal((await api('GET', '/cron/run', { token: 'wrong' })).status, 401);
+    const ok = await fetch(`${base}/api/cron/run`, { headers: { Authorization: 'Bearer test-secret' } });
+    assert.equal(ok.status, 200);
+    assert.equal((await ok.json()).success, true);
+  } finally {
+    e2.CRON_SECRET = '';
+  }
+});

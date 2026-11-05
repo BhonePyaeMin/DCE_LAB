@@ -23,7 +23,7 @@ export function errorHandler(err, _req, res, _next) {
     message = `Invalid ${err.path}`;
   } else if (err instanceof multer.MulterError) {
     status = 400;
-    message = err.code === 'LIMIT_FILE_SIZE' ? 'File is too large (max 5 MB)' : err.message;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'File is too large (max 4 MB)' : err.message;
   } else if (err.type === 'entity.parse.failed') {
     status = 400;
     message = 'Malformed JSON body';

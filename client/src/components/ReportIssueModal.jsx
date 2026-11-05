@@ -18,7 +18,14 @@ export function ReportIssueModal({ equipment, onClose, onCreated }) {
   const pickFiles = (e) => {
     const picked = Array.from(e.target.files || []);
     if (picked.length > 3) toast.error('You can attach up to 3 photos');
-    setFiles(picked.slice(0, 3));
+    const chosen = picked.slice(0, 3);
+    // Hosting limits a request body to about 4.5 MB, so keep the combined size under 4 MB.
+    if (chosen.reduce((sum, f) => sum + f.size, 0) > 4 * 1024 * 1024) {
+      toast.error('The photos are too large together (max 4 MB in total)');
+      e.target.value = '';
+      return setFiles([]);
+    }
+    setFiles(chosen);
   };
 
   const submit = async (e) => {
@@ -81,7 +88,7 @@ export function ReportIssueModal({ equipment, onClose, onCreated }) {
             <option value="high">High - unusable or unsafe</option>
           </select>
         </Field>
-        <Field label="Photos (optional)" hint="Up to 3 images, 5 MB each.">
+        <Field label="Photos (optional)" hint="Up to 3 images, 4 MB in total.">
           <label className="flex cursor-pointer items-center gap-2 rounded border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-600 hover:bg-slate-50">
             <ImagePlus size={18} />
             {files.length ? `${files.length} photo(s) selected` : 'Choose images'}

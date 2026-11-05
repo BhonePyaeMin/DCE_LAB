@@ -1,6 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../services/api.js';
-import { getSocket } from '../services/socket.js';
+import { getSocket, POLL_INTERVAL_MS, realtimeEnabled } from '../services/socket.js';
 import { useAuth } from './AuthContext.jsx';
 import { useToast } from './ToastContext.jsx';
 
@@ -12,16 +12,23 @@ export function NotificationProvider({ children }) {
   const toast = useToast();
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
+  const knownUnread = useRef(null);
 
   const refresh = useCallback(async () => {
     try {
       const res = await api.get('/notifications', { params: { limit: 30 } });
       setItems(res.data.items);
       setUnread(res.data.unread);
+      // When polling instead of using sockets, surface anything that arrived since the last check.
+      if (!realtimeEnabled && knownUnread.current !== null && res.data.unread > knownUnread.current) {
+        const newest = res.data.items.find((n) => !n.read);
+        if (newest) toast.info(newest.message, newest.title);
+      }
+      knownUnread.current = res.data.unread;
     } catch {
       /* the bell simply stays empty if the request fails */
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (!user) {
@@ -30,6 +37,10 @@ export function NotificationProvider({ children }) {
       return undefined;
     }
     refresh();
+    if (!realtimeEnabled) {
+      const timer = setInterval(() => document.visibilityState === 'visible' && refresh(), POLL_INTERVAL_MS);
+      return () => clearInterval(timer);
+    }
     const socket = getSocket();
     if (!socket) return undefined;
     const onNew = (n) => {

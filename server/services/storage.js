@@ -3,6 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { env } from '../config/env.js';
+import File from '../models/File.js';
 import { AppError } from '../utils/appError.js';
 
 export const UPLOAD_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'uploads');
@@ -46,6 +47,12 @@ export async function storeImage(file) {
       );
       stream.end(file.buffer);
     });
+  }
+
+  // Production hosts (e.g. Vercel) have no writable disk, so images go into MongoDB and are served by /api/files.
+  if (env.isProd) {
+    const stored = await File.create({ data: file.buffer, contentType: file.mimetype, size: file.size });
+    return `${env.SERVER_URL}/api/files/${stored._id}`;
   }
 
   await fs.mkdir(UPLOAD_DIR, { recursive: true });

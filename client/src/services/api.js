@@ -36,7 +36,12 @@ api.interceptors.response.use(
 export const errorMessage = (err) => err?.userMessage || err?.message || 'Something went wrong';
 
 /** Resolves an uploaded image URL returned by the API. */
-export const assetUrl = (path) => (!path ? '' : /^https?:\/\//.test(path) ? path : `${ASSET_ORIGIN}${path}`);
+// Built-in illustrations (/assets/...) are shipped with the client; everything else comes from the API origin.
+export const assetUrl = (path) => {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path) || path.startsWith('/assets/')) return path;
+  return `${ASSET_ORIGIN}${path}`;
+};
 
 /** Builds a multipart body from a plain object, skipping empty values. */
 export function toFormData(values, files = {}) {

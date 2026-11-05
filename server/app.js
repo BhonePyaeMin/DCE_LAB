@@ -1,5 +1,3 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -15,7 +13,12 @@ const app = express();
 
 app.set('trust proxy', 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
+app.use(
+  cors({
+    origin: (origin, cb) => cb(null, !origin || env.CLIENT_ORIGINS.includes(origin)),
+    credentials: true,
+  })
+);
 if (!env.isTest) app.use(morgan(env.isProd ? 'combined' : 'dev'));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
@@ -35,14 +38,7 @@ app.use(
     setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
   })
 );
-// Built-in illustrations used by the demo data (user uploads live under /uploads).
-app.use(
-  '/assets',
-  express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), 'public'), {
-    index: false,
-    setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
-  })
-);
+app.get('/', (_req, res) => res.json({ success: true, name: 'DCE Lab API', docs: '/api/health' }));
 app.use('/api', routes);
 app.use(notFound);
 app.use(errorHandler);
