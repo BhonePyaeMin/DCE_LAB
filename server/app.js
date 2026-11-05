@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -29,6 +31,14 @@ app.use('/api/auth/register', limiter(60 * 60 * 1000, 20, 'Too many registration
 app.use(
   '/uploads',
   express.static(UPLOAD_DIR, {
+    index: false,
+    setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+  })
+);
+// Built-in illustrations used by the demo data (user uploads live under /uploads).
+app.use(
+  '/assets',
+  express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), 'public'), {
     index: false,
     setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
   })

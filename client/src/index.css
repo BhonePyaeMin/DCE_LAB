@@ -8,10 +8,18 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
   html,
   body,
   #root {
-    height: 100%;
+    min-height: 100%;
   }
   body {
     @apply bg-slate-50 font-sans text-slate-800 antialiased;

@@ -14,7 +14,6 @@ import { fmtDate, titleCase } from '../utils/format.js';
 
 const EXPORTS = [
   { type: 'borrowings', label: 'Borrowing history' },
-  { type: 'reservations', label: 'Reservations' },
   { type: 'overdue', label: 'Overdue equipment' },
   { type: 'maintenance', label: 'Maintenance' },
   { type: 'equipment', label: 'Inventory' },
@@ -28,7 +27,7 @@ export default function Analytics() {
   const [downloading, setDownloading] = useState('');
 
   const range = useMemo(() => ({ from: startOfMonth(subMonths(new Date(), Number(months) - 1)).toISOString(), to: new Date().toISOString() }), [months]);
-  const { data, loading, error, reload } = useFetch('/analytics/reports', { params: range, watch: ['borrowings', 'reservations', 'maintenance'] });
+  const { data, loading, error, reload } = useFetch('/analytics/reports', { params: range, watch: ['borrowings', 'maintenance'] });
 
   const download = async (type) => {
     setDownloading(type);
@@ -53,7 +52,7 @@ export default function Analytics() {
     <>
       <PageHeader
         title="Analytics and reports"
-        description="Utilisation, bookings, borrowing and maintenance insights."
+        description="Equipment utilisation, borrowing and maintenance insights."
         actions={
           <Segmented
             label="analytics-range"
@@ -91,8 +90,8 @@ export default function Analytics() {
                           <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
                           <Tooltip cursor={{ fill: '#f1f5f9' }} />
                           <Legend iconType="square" wrapperStyle={{ fontSize: 12 }} />
-                          <Bar dataKey="reservations" name="Reservations" fill="#c8102e" radius={[2, 2, 0, 0]} {...chartProps} />
-                          <Bar dataKey="borrowings" name="Borrowing requests" fill="#475569" radius={[2, 2, 0, 0]} {...chartProps} />
+                          <Bar dataKey="requests" name="Borrow requests" fill="#c8102e" radius={[2, 2, 0, 0]} {...chartProps} />
+                          <Bar dataKey="returns" name="Returns" fill="#475569" radius={[2, 2, 0, 0]} {...chartProps} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -122,37 +121,38 @@ export default function Analytics() {
             </div>
 
             <motion.div variants={fadeUp}>
-              <Card title="Laboratory bookings" padded={false}>
-                {data.laboratoryBookings.length === 0 ? (
-                  <EmptyState title="No bookings in this period" />
+              <Card title="Borrowing by category" padded={false}>
+                {data.categoryBreakdown.length === 0 ? (
+                  <EmptyState title="No borrowing in this period" />
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px]">
+                    <table className="w-full min-w-[480px]">
                       <thead>
                         <tr>
-                          <th className="th">Laboratory</th>
+                          <th className="th">Category</th>
                           <th className="th">Requests</th>
-                          <th className="th">Approved</th>
-                          <th className="th">Rejected</th>
-                          <th className="th">Pending</th>
-                          <th className="th">Hours used</th>
+                          <th className="th">Units</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {data.laboratoryBookings.map((l) => (
-                          <tr key={l.code}>
-                            <td className="td font-medium text-slate-900">
-                              {l.name} <span className="text-slate-400">({l.code})</span>
-                            </td>
-                            <td className="td">{l.total}</td>
-                            <td className="td">{l.approved}</td>
-                            <td className="td">{l.rejected}</td>
-                            <td className="td">{l.pending}</td>
-                            <td className="td">{l.hours}</td>
+                        {data.categoryBreakdown.map((c) => (
+                          <tr key={c.category}>
+                            <td className="td font-medium text-slate-900">{c.category}</td>
+                            <td className="td">{c.borrowings}</td>
+                            <td className="td">{c.units}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+                {data.borrowingByStatus.length > 0 && (
+                  <div className="flex flex-wrap gap-2 border-t border-slate-100 p-4">
+                    {data.borrowingByStatus.map((s) => (
+                      <span key={s.status} className="flex items-center gap-2 rounded border border-slate-200 px-2 py-1 text-sm">
+                        <StatusBadge status={s.status} /> <span className="font-semibold">{s.count}</span>
+                      </span>
+                    ))}
                   </div>
                 )}
               </Card>

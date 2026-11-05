@@ -4,8 +4,8 @@ import Equipment from '../models/Equipment.js';
 import Maintenance from '../models/Maintenance.js';
 import { AppError, asyncHandler } from '../utils/appError.js';
 import { parsePagination } from '../utils/helpers.js';
-import { BORROWING_STATUSES } from '../utils/constants.js';
-import { notify, notifyAdmins } from '../services/notify.js';
+import { BORROWING_STATUSES, isStaff } from '../utils/constants.js';
+import { notify, notifyStaff } from '../services/notify.js';
 import { logActivity } from '../services/activity.js';
 import { broadcastChange } from '../sockets/index.js';
 
@@ -53,7 +53,7 @@ export const createBorrowing = asyncHandler(async (req, res) => {
 
   const borrowing = await Borrowing.create({ user: req.user._id, equipment: equipment._id, quantity, purpose, borrowDate, dueDate });
   await logActivity(req, { action: 'borrowing.create', entity: 'Borrowing', entityId: borrowing._id, description: `Requested ${quantity} x ${equipment.name}` });
-  await notifyAdmins(
+  await notifyStaff(
     { type: 'borrowing', title: 'New borrowing request', message: `${req.user.name} requested ${quantity} x ${equipment.name}.`, link: '/borrowings' },
     { exclude: req.user._id }
   );
@@ -66,7 +66,7 @@ export const listBorrowings = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const filter = {};
   const { role } = req.user;
-  const seesAll = role === 'admin' || (role === 'lecturer' && req.query.scope === 'all');
+  const seesAll = isStaff(role) || (role === 'lecturer' && req.query.scope === 'all');
   if (!seesAll) filter.user = req.user._id;
   if (req.query.status && BORROWING_STATUSES.includes(req.query.status)) filter.status = req.query.status;
   if (req.query.equipment) filter.equipment = req.query.equipment;
@@ -84,6 +84,39 @@ export const listBorrowings = asyncHandler(async (req, res) => {
     page,
     pages: Math.ceil(total / limit),
   });
+});
+
+export const calendarQuerySchema = z.object({ from: z.coerce.date(), to: z.coerce.date() });
+
+/**
+ * Calendar feed of equipment pick-ups and returns in a date range.
+ * Staff see everyone's items; everybody else sees their own.
+ */
+export const calendar = asyncHandler(async (req, res) => {
+  const { from, to } = req.query;
+  if (to <= from || to - from > 62 * DAY) throw new AppError('Date range must be between 1 and 62 days', 400);
+  const inRange = (field) => ({ [field]: { $gte: from, $lt: to } });
+  const scope = isStaff(req.user.role) ? {} : { user: req.user._id };
+
+  const records = await Borrowing.find({
+    ...scope,
+    status: { $nin: ['rejected', 'cancelled'] },
+    $or: [inRange('borrowDate'), inRange('dueDate'), inRange('returnedAt')],
+  })
+    .populate('user', 'name')
+    .populate('equipment', 'name equipmentId');
+
+  const events = [];
+  const within = (date) => date >= from && date < to;
+  for (const b of records) {
+    const base = { borrowing: b._id, status: b.status, quantity: b.quantity, equipment: b.equipment, user: b.user, mine: String(b.user?._id) === String(req.user._id) };
+    // Pick-up is only relevant until the item has been collected.
+    if (['pending', 'approved'].includes(b.status) && within(b.borrowDate)) events.push({ ...base, type: 'pickup', date: b.borrowDate });
+    if (['pending', 'approved', 'borrowed', 'overdue'].includes(b.status) && within(b.dueDate)) events.push({ ...base, type: 'return', date: b.dueDate });
+    if (b.returnedAt && within(b.returnedAt)) events.push({ ...base, type: 'returned', date: b.returnedAt });
+  }
+  events.sort((a, b) => a.date - b.date);
+  res.json({ success: true, items: events });
 });
 
 async function loadBorrowing(id) {
@@ -192,7 +225,7 @@ export const returnBorrowing = asyncHandler(async (req, res) => {
 export const cancelBorrowing = asyncHandler(async (req, res) => {
   const borrowing = await loadBorrowing(req.params.id);
   const isOwner = String(borrowing.user._id) === String(req.user._id);
-  if (!isOwner && req.user.role !== 'admin') throw new AppError('You cannot cancel this request', 403);
+  if (!isOwner && !isStaff(req.user.role)) throw new AppError('You cannot cancel this request', 403);
   if (!['pending', 'approved'].includes(borrowing.status)) throw new AppError(`A ${borrowing.status} request cannot be cancelled`, 409);
 
   if (borrowing.status === 'approved') {

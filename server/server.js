@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { env } from './config/env.js';
-import { connectDB } from './config/db.js';
+import { connectDB, disconnectDB } from './config/db.js';
 import app from './app.js';
 import { initSockets } from './sockets/index.js';
 import { startScheduler } from './services/scheduler.js';
@@ -21,7 +21,17 @@ async function start() {
 
   server.listen(env.PORT, () => console.log(`[server] DCE Lab API listening on http://localhost:${env.PORT}`));
 
-  const shutdown = () => server.close(() => process.exit(0));
+  // Stop accepting requests and close the database cleanly (matters for the embedded dev database).
+  let closing = false;
+  const shutdown = () => {
+    if (closing) return;
+    closing = true;
+    server.close(async () => {
+      await disconnectDB();
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10000).unref();
+  };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 }

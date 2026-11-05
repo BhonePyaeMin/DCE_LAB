@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import Laboratory from '../models/Laboratory.js';
-import Reservation from '../models/Reservation.js';
 import { AppError, asyncHandler } from '../utils/appError.js';
 import { escapeRegex } from '../utils/helpers.js';
 import { LAB_STATUSES } from '../utils/constants.js';
@@ -72,12 +71,6 @@ export const updateLab = asyncHandler(async (req, res) => {
 export const deleteLab = asyncHandler(async (req, res) => {
   const lab = await Laboratory.findById(req.params.id);
   if (!lab) throw new AppError('Laboratory not found', 404);
-  const upcoming = await Reservation.exists({
-    laboratory: lab._id,
-    status: { $in: ['pending', 'approved'] },
-    endTime: { $gte: new Date() },
-  });
-  if (upcoming) throw new AppError('This laboratory has upcoming reservations. Cancel them first or set the lab to closed.', 409);
   await lab.deleteOne();
   await logActivity(req, { action: 'lab.delete', entity: 'Laboratory', entityId: lab._id, description: `Deleted laboratory ${lab.name}` });
   broadcastChange('laboratories', 'delete', lab._id);

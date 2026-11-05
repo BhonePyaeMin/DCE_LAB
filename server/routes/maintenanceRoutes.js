@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { protect, authorize } from '../middleware/auth.js';
 import { validate, objectIdParam } from '../middleware/validate.js';
 import { imageUpload } from '../middleware/upload.js';
+import { STAFF_ROLES } from '../utils/constants.js';
 import * as ctrl from '../controllers/maintenanceController.js';
 
 const router = Router();
@@ -13,6 +14,6 @@ router
   .get(ctrl.listMaintenance)
   .post(imageUpload.array('images', 3), validate(ctrl.createMaintenanceSchema), ctrl.createMaintenance);
 router.get('/:id', ctrl.getMaintenance);
-router.patch('/:id', authorize('admin'), validate(ctrl.updateMaintenanceSchema), ctrl.updateMaintenance);
+router.patch('/:id', authorize(...STAFF_ROLES), validate(ctrl.updateMaintenanceSchema), ctrl.updateMaintenance);
 
 export default router;

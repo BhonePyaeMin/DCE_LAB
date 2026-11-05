@@ -1,7 +1,8 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import logo from '../assets/logo.png';
+import mark from '../assets/mark.png';
 import { useAuth } from '../context/AuthContext.jsx';
 import { NAV_ITEMS } from './navigation.js';
 
@@ -33,7 +34,9 @@ function SidebarContent({ collapsed, onToggle, onNavigate, onClose }) {
   return (
     <div className="flex h-full flex-col">
       <div className={`flex h-16 items-center border-b border-slate-200 ${collapsed ? 'justify-center' : 'justify-between px-4'}`}>
-        <img src={logo} alt="DCE Lab" className={collapsed ? 'h-8 w-8 object-cover object-left' : 'h-10 w-auto'} />
+        <Link to="/" aria-label="DCE Lab home">
+          <img src={collapsed ? mark : logo} alt="DCE Lab" className={collapsed ? 'h-9 w-9' : 'h-9 w-auto'} />
+        </Link>
         {onClose && (
           <button onClick={onClose} className="rounded p-1 text-slate-500 hover:bg-slate-100 lg:hidden" aria-label="Close menu">
             <X size={20} />

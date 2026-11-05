@@ -70,6 +70,7 @@ function UserForm({ target, isSelf, onClose, onSaved }) {
           <select className="input" value={form.role} onChange={set('role')} disabled={isSelf}>
             <option value="student">Student</option>
             <option value="lecturer">Lecturer</option>
+            <option value="assistant">Lab assistant</option>
             <option value="admin">Laboratory administrator</option>
           </select>
         </Field>
@@ -140,6 +141,7 @@ export default function Users() {
             <option value="">All roles</option>
             <option value="student">Students</option>
             <option value="lecturer">Lecturers</option>
+            <option value="assistant">Lab assistants</option>
             <option value="admin">Administrators</option>
           </select>
         </div>

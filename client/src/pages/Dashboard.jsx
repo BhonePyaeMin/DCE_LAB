@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CalendarDays, ClipboardList, FlaskConical, Package, PackageCheck, PackageOpen, TriangleAlert, Wrench } from 'lucide-react';
+import { CalendarDays, ClipboardList, FlaskConical, Package, PackageCheck, PackageOpen, Truck, TriangleAlert, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../hooks/useFetch.js';
 import { Card, EmptyState, ErrorNotice, PageHeader, Skeleton } from '../components/ui.jsx';
+import { EquipmentImage } from '../components/EquipmentImage.jsx';
+import { StatusBadge } from '../components/StatusBadge.jsx';
 import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 import { fadeUp, staggerContainer } from '../animations/variants.js';
-import { fmtRange, timeAgo, titleCase } from '../utils/format.js';
+import { fmtDate, timeAgo, titleCase } from '../utils/format.js';
 
 const CONDITION_COLORS = { good: '#059669', fair: '#d97706', poor: '#ea580c', damaged: '#c8102e', maintenance: '#7c3aed' };
 
@@ -37,9 +39,9 @@ function StatCard({ icon: Icon, label, value, to, tone = 'slate', hint }) {
 }
 
 export default function Dashboard() {
-  const { user, isAdmin, isLecturer } = useAuth();
+  const { user, isStaff } = useAuth();
   const reduce = useReducedMotion();
-  const { data, loading, error, reload } = useFetch('/analytics/dashboard', { watch: ['reservations', 'borrowings', 'equipment', 'maintenance'] });
+  const { data, loading, error, reload } = useFetch('/analytics/dashboard', { watch: ['borrowings', 'equipment', 'maintenance'] });
 
   if (loading && !data) {
     return (
@@ -55,8 +57,8 @@ export default function Dashboard() {
   }
   if (error && !data) return <ErrorNotice message={error} onRetry={reload} />;
 
-  const { stats, upcomingSessions, recentActivity, conditionOverview } = data;
-  const mine = !isAdmin;
+  const { stats, upcomingItems, recentActivity, conditionOverview } = data;
+  const mine = !isStaff;
   const chart = conditionOverview.map((c) => ({ name: titleCase(c.condition), key: c.condition, units: c.units }));
 
   return (
@@ -68,8 +70,8 @@ export default function Dashboard() {
         <StatCard icon={Package} label="Equipment items" value={stats.equipmentItems} to="/equipment" hint={`${stats.totalUnits} units in total`} />
         <StatCard icon={PackageCheck} label="Available units" value={stats.availableUnits} to="/equipment" tone="green" />
         <StatCard icon={PackageOpen} label={mine ? 'Units I have borrowed' : 'Units currently borrowed'} value={stats.borrowedUnits} to="/borrowings" tone="violet" />
-        <StatCard icon={CalendarDays} label={mine ? 'My pending reservations' : isLecturer ? 'Student requests to review' : 'Pending reservations'} value={stats.pendingReservations} to="/reservations" tone="amber" />
         <StatCard icon={ClipboardList} label={mine ? 'My pending borrow requests' : 'Pending borrow requests'} value={stats.pendingBorrowings} to="/borrowings" tone="amber" />
+        <StatCard icon={Truck} label={mine ? 'Ready for me to collect' : 'Approved, awaiting pick-up'} value={stats.readyForPickup} to="/borrowings" tone="slate" />
         <StatCard icon={TriangleAlert} label={mine ? 'My overdue items' : 'Overdue equipment'} value={stats.overdue} to="/borrowings" tone={stats.overdue ? 'brand' : 'slate'} />
         <StatCard icon={Wrench} label="Open maintenance reports" value={stats.openMaintenance} to="/maintenance" hint={stats.damagedUnits ? `${stats.damagedUnits} damaged unit(s)` : undefined} />
       </motion.div>
@@ -97,18 +99,24 @@ export default function Dashboard() {
           )}
         </Card>
 
-        <Card title="Upcoming sessions" actions={<Link to="/reservations" className="text-xs font-medium text-brand-700 hover:underline">View all</Link>} padded={false}>
-          {upcomingSessions.length === 0 ? (
-            <EmptyState icon={CalendarDays} title="No upcoming sessions" description="Approved reservations will appear here." />
+        <Card title="Next pick-ups and returns" actions={<Link to="/calendar" className="text-xs font-medium text-brand-700 hover:underline">Open calendar</Link>} padded={false}>
+          {upcomingItems.length === 0 ? (
+            <EmptyState icon={CalendarDays} title="Nothing coming up" description="Approved and borrowed equipment will appear here." />
           ) : (
             <ul>
-              {upcomingSessions.map((s, i) => (
-                <motion.li key={s._id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="border-b border-slate-100 px-4 py-3 last:border-0">
-                  <p className="text-sm font-medium text-slate-900">{s.laboratory?.name}</p>
-                  <p className="text-xs text-slate-500">{fmtRange(s.startTime, s.endTime)}</p>
-                  <p className="mt-0.5 truncate text-xs text-slate-400">
-                    {s.user?.name} - {s.purpose}
-                  </p>
+              {upcomingItems.map((b, i) => (
+                <motion.li key={b._id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="flex gap-3 border-b border-slate-100 px-4 py-3 last:border-0">
+                  <EquipmentImage item={b.equipment} className="h-11 w-14 shrink-0 rounded" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      {b.quantity} x {b.equipment?.name}
+                    </p>
+                    <p className={`text-xs ${b.status === 'overdue' ? 'font-semibold text-brand-700' : 'text-slate-500'}`}>
+                      {b.status === 'approved' ? `Pick-up ${fmtDate(b.borrowDate)}` : `Return by ${fmtDate(b.dueDate)}`}
+                    </p>
+                    {isStaff && <p className="truncate text-xs text-slate-400">{b.user?.name}</p>}
+                  </div>
+                  <StatusBadge status={b.status} />
                 </motion.li>
               ))}
             </ul>

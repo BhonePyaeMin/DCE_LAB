@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-label="VR headset">
+  <rect width="480" height="360" fill="#f1f5f9"/>
+  <ellipse cx="240" cy="298" rx="160" ry="10" fill="#cbd5e1"/>
+  <path d="M60 170c0-22 14-36 36-36h288c22 0 36 14 36 36v52c0 22-14 36-36 36H96c-22 0-36-14-36-36z" fill="#334155"/>
+  <rect x="84" y="152" width="312" height="86" rx="12" fill="#0f172a"/>
+  <circle cx="176" cy="195" r="30" fill="#1e293b" stroke="#64748b" stroke-width="4"/>
+  <circle cx="304" cy="195" r="30" fill="#1e293b" stroke="#64748b" stroke-width="4"/>
+  <circle cx="176" cy="195" r="14" fill="#c8102e"/>
+  <circle cx="304" cy="195" r="14" fill="#c8102e"/>
+  <path d="M212 258c8 14 48 14 56 0" stroke="#0f172a" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M60 188H34v22h26M420 188h26v22h-26" fill="#64748b"/>
+  <rect x="222" y="164" width="36" height="8" rx="3" fill="#475569"/>
+</svg>

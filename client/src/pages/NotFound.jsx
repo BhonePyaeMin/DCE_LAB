@@ -9,7 +9,7 @@ export default function NotFound() {
       title="Page not found"
       description="The page you are looking for does not exist or has moved."
       action={
-        <Link to="/" className="text-sm font-semibold text-brand-700 hover:underline">
+        <Link to="/dashboard" className="text-sm font-semibold text-brand-700 hover:underline">
           Back to the dashboard
         </Link>
       }

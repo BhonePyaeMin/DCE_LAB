@@ -6,7 +6,7 @@ const router = Router();
 router.use(protect);
 
 router.get('/dashboard', ctrl.dashboard);
-router.get('/reports', authorize('admin', 'lecturer'), ctrl.reports);
+router.get('/reports', authorize('admin', 'lecturer', 'assistant'), ctrl.reports);
 router.get('/reports/export/:type', authorize('admin'), ctrl.exportCsv);
 
 export default router;

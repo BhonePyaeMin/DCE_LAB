@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import User from '../models/User.js';
-import Reservation from '../models/Reservation.js';
 import Borrowing from '../models/Borrowing.js';
 import Maintenance from '../models/Maintenance.js';
 import ActivityLog from '../models/ActivityLog.js';
@@ -68,12 +67,11 @@ export const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) throw new AppError('User not found', 404);
   if (String(user._id) === String(req.user._id)) throw new AppError('You cannot delete your own account', 400);
-  const [r, b, m] = await Promise.all([
-    Reservation.exists({ user: user._id }),
+  const [b, m] = await Promise.all([
     Borrowing.exists({ user: user._id }),
     Maintenance.exists({ reportedBy: user._id }),
   ]);
-  if (r || b || m) throw new AppError('This user has records and cannot be deleted. Deactivate the account instead.', 409);
+  if (b || m) throw new AppError('This user has records and cannot be deleted. Deactivate the account instead.', 409);
   await user.deleteOne();
   await logActivity(req, { action: 'user.delete', entity: 'User', entityId: user._id, description: `Deleted account ${user.email}` });
   res.json({ success: true });

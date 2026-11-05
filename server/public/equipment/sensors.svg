@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-label="Sensor module">
+  <rect width="480" height="360" fill="#f1f5f9"/>
+  <ellipse cx="240" cy="296" rx="140" ry="10" fill="#cbd5e1"/>
+  <rect x="150" y="70" width="180" height="200" rx="10" fill="#1d4ed8"/>
+  <rect x="166" y="86" width="148" height="104" rx="6" fill="#f8fafc"/>
+  <g fill="#cbd5e1">
+    <rect x="176" y="96" width="128" height="6"/><rect x="176" y="110" width="128" height="6"/><rect x="176" y="124" width="128" height="6"/>
+    <rect x="176" y="138" width="128" height="6"/><rect x="176" y="152" width="128" height="6"/><rect x="176" y="166" width="128" height="6"/>
+  </g>
+  <rect x="176" y="96" width="128" height="6" fill="#94a3b8"/>
+  <rect x="206" y="204" width="68" height="40" rx="3" fill="#0f172a"/>
+  <circle cx="226" cy="224" r="6" fill="#c8102e"/>
+  <g fill="#fbbf24">
+    <rect x="178" y="270" width="8" height="30" rx="2"/><rect x="222" y="270" width="8" height="30" rx="2"/>
+    <rect x="266" y="270" width="8" height="30" rx="2"/><rect x="302" y="270" width="8" height="30" rx="2"/>
+  </g>
+  <circle cx="170" cy="250" r="8" fill="#93c5fd"/>
+  <circle cx="310" cy="250" r="8" fill="#93c5fd"/>
+</svg>

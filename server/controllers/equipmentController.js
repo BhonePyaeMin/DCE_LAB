@@ -79,11 +79,12 @@ export const qrCode = asyncHandler(async (req, res) => {
 });
 
 export const createEquipment = asyncHandler(async (req, res) => {
+  if (!req.file) throw new AppError('An equipment photo is required', 400);
   const image = await storeImage(req.file);
   const item = await Equipment.create({
     ...req.body,
     available: req.body.quantity,
-    ...(image ? { image } : {}),
+    image,
   });
   await logActivity(req, { action: 'equipment.create', entity: 'Equipment', entityId: item._id, description: `Registered ${item.name} (${item.equipmentId})` });
   broadcastChange('equipment', 'create', item._id);

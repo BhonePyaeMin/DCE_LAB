@@ -8,7 +8,7 @@ import { ConfirmDialog, Modal } from './Modal.jsx';
 
 /** Row actions for a borrowing record. Which buttons appear depends on the status and the viewer's role. */
 export function BorrowingActions({ borrowing, onChanged }) {
-  const { user, isAdmin } = useAuth();
+  const { user, isStaff } = useAuth();
   const toast = useToast();
   const [dialog, setDialog] = useState(null); // 'approve' | 'reject' | 'return' | 'cancel'
   const [note, setNote] = useState('');
@@ -40,7 +40,7 @@ export function BorrowingActions({ borrowing, onChanged }) {
   return (
     <>
       <div className="flex flex-wrap justify-end gap-1.5">
-        {isAdmin && status === 'pending' && !isOwner && (
+        {isStaff && status === 'pending' && !isOwner && (
           <>
             <Button size="sm" icon={Check} onClick={() => setDialog('approve')}>
               Approve
@@ -50,17 +50,17 @@ export function BorrowingActions({ borrowing, onChanged }) {
             </Button>
           </>
         )}
-        {isAdmin && status === 'approved' && (
+        {isStaff && status === 'approved' && (
           <Button size="sm" icon={LogOut} loading={busy} onClick={() => run(() => api.patch(`/borrowings/${id}/collect`), 'Equipment checked out')}>
             Check out
           </Button>
         )}
-        {isAdmin && ['borrowed', 'overdue'].includes(status) && (
+        {isStaff && ['borrowed', 'overdue'].includes(status) && (
           <Button size="sm" icon={LogIn} onClick={() => setDialog('return')}>
             Process return
           </Button>
         )}
-        {(isOwner || isAdmin) && ['pending', 'approved'].includes(status) && (
+        {(isOwner || isStaff) && ['pending', 'approved'].includes(status) && (
           <Button size="sm" variant="secondary" icon={Ban} onClick={() => setDialog('cancel')}>
             Cancel
           </Button>

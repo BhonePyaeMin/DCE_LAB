@@ -17,4 +17,14 @@ export const toDateInput = (date) => format(date, 'yyyy-MM-dd');
 
 export const titleCase = (value = '') => value.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
 
-export const ROLE_LABEL = { student: 'Student', lecturer: 'Lecturer', admin: 'Administrator' };
+export const ROLE_LABEL = { student: 'Student', lecturer: 'Lecturer', assistant: 'Lab Assistant', admin: 'Administrator' };
+
+export const CATEGORY_IMAGES = {
+  'Computers and Laptops': '/assets/equipment/computers.svg',
+  'Arduino and ESP32': '/assets/equipment/microcontrollers.svg',
+  'Networking Equipment': '/assets/equipment/networking.svg',
+  'Cameras and Photography': '/assets/equipment/cameras.svg',
+  'VR and AR Devices': '/assets/equipment/vr-ar.svg',
+  'Sensors and Electronic Components': '/assets/equipment/sensors.svg',
+  'Laboratory Tools': '/assets/equipment/tools.svg',
+};

@@ -11,8 +11,8 @@ export async function notify(userIds, { type = 'system', title, message, link })
   return docs;
 }
 
-export async function notifyAdmins(payload, { exclude } = {}) {
-  const admins = await User.find({ role: 'admin', isActive: true }).select('_id');
+export async function notifyStaff(payload, { exclude } = {}) {
+  const admins = await User.find({ role: { $in: ['admin', 'assistant'] }, isActive: true }).select('_id');
   const ids = admins.map((a) => String(a._id)).filter((id) => id !== String(exclude));
   return notify(ids, payload);
 }

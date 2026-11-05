@@ -14,14 +14,14 @@ import {
 
 // `roles` omitted = visible to everyone.
 export const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/laboratories', label: 'Laboratories', icon: FlaskConical },
-  { to: '/reservations', label: 'Reservations', icon: CalendarDays },
   { to: '/equipment', label: 'Equipment', icon: Package },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/borrowings', label: 'Borrowing', icon: ClipboardList },
   { to: '/maintenance', label: 'Maintenance', icon: Wrench },
   { to: '/scan', label: 'QR Scanner', icon: QrCode },
-  { to: '/analytics', label: 'Analytics', icon: ChartNoAxesCombined, roles: ['admin', 'lecturer'] },
+  { to: '/analytics', label: 'Analytics', icon: ChartNoAxesCombined, roles: ['admin', 'lecturer', 'assistant'] },
   { to: '/users', label: 'Users', icon: Users, roles: ['admin'] },
   { to: '/activity', label: 'Activity Log', icon: ScrollText, roles: ['admin'] },
   { to: '/settings', label: 'Settings', icon: Settings },

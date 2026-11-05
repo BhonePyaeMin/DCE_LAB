@@ -34,9 +34,19 @@ export async function connectDB() {
 }
 
 export async function disconnectDB() {
-  await mongoose.disconnect();
   if (memoryServer) {
-    await memoryServer.stop();
+    // The embedded server is a standalone instance, which the library stops by killing the process
+    // (on Windows that skips the final checkpoint and recent writes are lost). Ask it to shut down
+    // cleanly first so development data survives restarts.
+    try {
+      await mongoose.connection.db.admin().command({ shutdown: 1, force: true, timeoutSecs: 5 });
+    } catch {
+      /* the connection drops as the server exits */
+    }
+  }
+  await mongoose.disconnect().catch(() => {});
+  if (memoryServer) {
+    await memoryServer.stop().catch(() => {});
     memoryServer = null;
   }
 }

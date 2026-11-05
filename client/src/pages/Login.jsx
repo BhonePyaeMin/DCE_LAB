@@ -20,7 +20,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(form.email, form.password);
-      navigate(location.state?.from || '/', { replace: true });
+      navigate(location.state?.from || '/dashboard', { replace: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {

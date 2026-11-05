@@ -6,21 +6,21 @@
 
 ### Laboratory & Equipment Management System
 
-A centralized laboratory management platform designed for the Digital and Communication Engineering (DCE) department. DCE Lab simplifies laboratory reservations, equipment borrowing, inventory tracking, and laboratory operations through a modern web-based system.
+A centralized laboratory management platform designed for the Digital and Communication Engineering (DCE) department. DCE Lab simplifies equipment borrowing, inventory tracking, and laboratory operations through a modern web-based system.
 
 ---
 
 ## 1. Project Overview
 
-**DCE Lab** is a web-based Laboratory Management System that helps students, lecturers, and laboratory administrators manage laboratory resources efficiently.
+**DCE Lab** is a web-based Laboratory Management System that helps students, lecturers, lab assistants, and laboratory administrators manage laboratory resources efficiently.
 
-The platform provides a centralized environment where users can reserve laboratory rooms, borrow equipment, monitor availability, and report equipment issues.
+The platform provides a centralized environment where users can borrow equipment, track pick-up and return dates, monitor availability, and report equipment issues.
 
 The goal is to reduce manual administrative work, improve resource utilization, and create a more organized laboratory environment.
 
 ### Core Objectives
 
-- Digitalize laboratory reservation processes.
+- Digitalize equipment borrowing and returning.
 - Manage laboratory equipment and inventory.
 - Track equipment borrowing and returning.
 - Improve transparency of resource availability.
@@ -67,38 +67,41 @@ DCE Lab uses the MERN Stack with a modular architecture.
 
 ## 3. User Roles & Permissions
 
-The system supports three primary user roles.
+The system supports four user roles. Laboratory room booking is intentionally not part of DCE Lab: the
+university already handles it, so the calendar covers equipment pick-ups and returns only.
 
 ### Student
 
-- View available laboratory rooms.
-- Reserve laboratory sessions.
-- Browse available equipment.
+- Browse available equipment (every item has a photo).
 - Submit equipment borrowing requests.
-- Track borrowing and returning status.
+- Track borrowing and returning status on the borrowing calendar.
 - Report damaged or malfunctioning equipment.
-- View reservation history.
+- View borrowing history.
 
 ### Lecturer
 
-- View laboratory schedules.
-- Request laboratory reservations.
-- Approve or manage academic laboratory sessions.
+- Browse and borrow equipment for teaching.
 - Monitor student equipment usage.
 - Report laboratory issues.
-- Review laboratory availability.
+- View analytics and availability.
+
+### Lab Assistant
+
+Runs the laboratory counter day to day.
+
+- Approve or reject borrowing requests.
+- Check equipment out and process returns.
+- Manage damaged equipment reports and repair status.
+- Monitor overdue equipment and scan QR labels.
+- View analytics and reports.
+- Cannot manage users, edit the inventory, delete records or view the audit log.
 
 ### Laboratory Administrator
 
-- Manage laboratory rooms.
-- Manage equipment inventory.
-- Approve or reject reservations.
-- Approve borrowing requests.
-- Process equipment returns.
-- Manage damaged equipment reports.
-- Monitor overdue equipment.
-- Generate operational reports.
-- Manage users and permissions.
+- Everything a lab assistant can do.
+- Manage laboratories and the equipment inventory (including photos).
+- Manage users, roles and permissions (including creating lab assistant accounts).
+- Export reports and view the audit log.
 
 ---
 
@@ -112,29 +115,25 @@ A centralized dashboard displaying important laboratory information.
 - Total equipment items.
 - Available equipment.
 - Currently borrowed equipment.
-- Pending reservations.
-- Upcoming laboratory sessions.
+- Pending borrowing requests.
+- Upcoming pick-ups and returns.
 - Recent activities.
 - Equipment condition overview.
 
-### 4.2 Laboratory Reservation
+### 4.2 Borrowing Calendar
 
-A digital room booking system.
+A calendar of equipment pick-ups and returns.
 
-- Browse available laboratories.
-- View room capacity and facilities.
-- Interactive calendar.
-- Select reservation date and time.
-- Check scheduling conflicts.
-- Submit reservation requests.
-- Approve or reject booking requests.
-- View reservation history.
+- Monthly view with pick-up, return-due and returned markers.
+- Day panel listing the items, quantities and statuses.
+- Filter by pick-up, returns due or returned.
+- Students and lecturers see their own items; lab staff see everyone's.
 
 ### 4.3 Equipment Management
 
 A centralized equipment inventory system.
 
-- Register new equipment.
+- Register new equipment (a photo is required).
 - Edit equipment information.
 - Assign equipment categories.
 - Track equipment quantity.
@@ -207,9 +206,8 @@ Maintenance statuses:
 
 Real-time notifications for important system activities.
 
-- Reservation approval or rejection.
 - Borrowing request updates.
-- Upcoming reservation reminders.
+- Pick-up reminders for approved requests.
 - Equipment return reminders.
 - Overdue equipment notifications.
 - Maintenance status updates.
@@ -263,7 +261,7 @@ Use **Lucide React** as the primary icon library.
 | Dashboard | LayoutDashboard |
 | Laboratory | FlaskConical |
 | Equipment | Package |
-| Reservations | CalendarDays |
+| Calendar | CalendarDays |
 | Borrowing | ClipboardList |
 | Users | Users |
 | Notifications | Bell |
@@ -344,7 +342,6 @@ MongoDB will store application data using Mongoose models.
 | users | User accounts and roles |
 | laboratories | Laboratory information |
 | equipment | Equipment inventory |
-| reservations | Laboratory reservations |
 | borrowings | Equipment borrowing records |
 | maintenance | Maintenance and damage reports |
 | notifications | User notifications |
@@ -354,13 +351,9 @@ MongoDB will store application data using Mongoose models.
 
 ```text
 User
- ├── Reservations
  ├── Borrowings
  ├── Maintenance Reports
  └── Notifications
-
-Laboratory
- └── Reservations
 
 Equipment
  ├── Borrowings
@@ -473,17 +466,19 @@ Start the frontend (a second terminal):
 npm run dev:client
 ```
 
-Open http://localhost:5173.
+Open http://localhost:5173. Signed-out visitors land on the public landing page; sign in to reach the dashboard.
 
 ### Demo Accounts
 
 `npm run seed` (also run automatically on the first development start) creates demo data and these accounts.
 The shared password is set by `SEED_PASSWORD`, or defaults to the value in `server/utils/seed.js`.
-These accounts are for local development only; never seed a production database.
+These accounts are for local development only; never seed a production database. Stop the dev server before
+running `npm run seed`, because both use the same embedded database folder.
 
 | Role | Email |
 |---|---|
 | Laboratory Administrator | admin@dcelab.test |
+| Lab Assistant | assistant@dcelab.test |
 | Lecturer | lecturer@dcelab.test |
 | Student | student@dcelab.test |
 
@@ -500,7 +495,6 @@ These accounts are for local development only; never seed a production database.
 | Variable | Purpose |
 |---|---|
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Store uploaded images on Cloudinary. Without them images are saved in `server/uploads`. |
-| `LAB_UTC_OFFSET_MINUTES` | Laboratory time zone offset used for opening-hour checks (default `420`, UTC+7). |
 | `SERVER_URL` | Public API origin prefixed to local upload URLs when the client and API are on different origins. |
 
 ### API Overview
@@ -512,10 +506,9 @@ All endpoints live under `/api` and (except login and registration) require a `B
 | Auth | `POST /auth/register`, `POST /auth/login`, `GET/PATCH /auth/me`, `POST /auth/change-password` |
 | Users (admin) | `GET/POST /users`, `PATCH/DELETE /users/:id`, `GET /users/activity-logs` |
 | Laboratories | `GET /laboratories`, `GET /laboratories/:id`, admin: `POST`, `PATCH /:id`, `DELETE /:id` |
-| Reservations | `GET/POST /reservations`, `GET /reservations/schedule`, `PATCH /:id/review`, `PATCH /:id/cancel` |
 | Equipment | `GET /equipment`, `GET /equipment/categories`, `GET /equipment/code/:code`, `GET /equipment/:id/qr`, admin: `POST`, `PATCH /:id`, `DELETE /:id` |
-| Borrowings | `GET/POST /borrowings`, admin: `PATCH /:id/review`, `/collect`, `/return`; `PATCH /:id/cancel` |
-| Maintenance | `GET/POST /maintenance`, `GET /maintenance/:id`, admin: `PATCH /:id` |
+| Borrowings | `GET/POST /borrowings`, `GET /borrowings/calendar`, staff: `PATCH /:id/review`, `/collect`, `/return`; `PATCH /:id/cancel` |
+| Maintenance | `GET/POST /maintenance`, `GET /maintenance/:id`, staff: `PATCH /:id` |
 | Notifications | `GET /notifications`, `PATCH /:id/read`, `PATCH /read-all`, `DELETE /:id` |
 | Analytics | `GET /analytics/dashboard`, `GET /analytics/reports`, admin: `GET /analytics/reports/export/:type` |
 
@@ -541,7 +534,7 @@ Security is important because the platform manages university resources and stud
 - Request rate limiting.
 - File upload validation.
 - Audit logging for important administrative actions.
-- Reservation conflict validation.
+- Image content verification for uploads.
 - Protection against unauthorized equipment transactions.
 
 ---
@@ -559,9 +552,8 @@ Security is important because the platform manages university resources and stud
 ### Phase 2 — Laboratory Management
 - [x] Laboratory CRUD operations.
 - [x] Laboratory availability.
-- [x] Reservation system.
-- [x] Calendar integration.
-- [x] Reservation approval workflow.
+- [x] Borrowing calendar (pick-ups and returns).
+- [x] Lab assistant role.
 
 ### Phase 3 — Equipment Management
 - [x] Equipment inventory.

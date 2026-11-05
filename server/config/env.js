@@ -16,8 +16,6 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET || 'dev-only-secret-change-me',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
-  // Offset of the laboratory's local time from UTC, used for opening-hour checks (default UTC+7).
-  LAB_UTC_OFFSET_MINUTES: Number(process.env.LAB_UTC_OFFSET_MINUTES ?? 420),
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',

@@ -50,6 +50,9 @@ export function AuthProvider({ children }) {
       loading,
       isAdmin: user?.role === 'admin',
       isLecturer: user?.role === 'lecturer',
+      isAssistant: user?.role === 'assistant',
+      // Admins and lab assistants run the counter: review requests, check out and process returns.
+      isStaff: user?.role === 'admin' || user?.role === 'assistant',
       login: (email, password) => authenticate('/auth/login', { email, password }),
       register: (payload) => authenticate('/auth/register', payload),
       logout,

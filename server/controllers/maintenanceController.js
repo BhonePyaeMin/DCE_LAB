@@ -4,7 +4,7 @@ import Equipment from '../models/Equipment.js';
 import { AppError, asyncHandler } from '../utils/appError.js';
 import { parsePagination } from '../utils/helpers.js';
 import { MAINTENANCE_STATUSES, MAINTENANCE_SEVERITIES, MAINTENANCE_OPEN_STATUSES } from '../utils/constants.js';
-import { notify, notifyAdmins } from '../services/notify.js';
+import { notify, notifyStaff } from '../services/notify.js';
 import { logActivity } from '../services/activity.js';
 import { storeImages } from '../services/storage.js';
 import { broadcastChange } from '../sockets/index.js';
@@ -48,7 +48,7 @@ export const createMaintenance = asyncHandler(async (req, res) => {
     history: [{ status: 'reported', note: 'Report submitted', by: req.user._id }],
   });
   await logActivity(req, { action: 'maintenance.create', entity: 'Maintenance', entityId: report._id, description: `Reported issue on ${equipment.name}: ${report.title}` });
-  await notifyAdmins(
+  await notifyStaff(
     { type: 'maintenance', title: 'New maintenance report', message: `${req.user.name} reported an issue with ${equipment.name}.`, link: '/maintenance' },
     { exclude: req.user._id }
   );

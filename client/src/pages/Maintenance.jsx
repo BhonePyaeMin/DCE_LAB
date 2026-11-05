@@ -15,7 +15,7 @@ const STATUSES = ['reported', 'under_review', 'in_progress', 'resolved', 'unrepa
 const OPEN = ['reported', 'under_review', 'in_progress'];
 
 function DetailModal({ id, onClose, onChanged }) {
-  const { isAdmin } = useAuth();
+  const { isStaff } = useAuth();
   const toast = useToast();
   const { data, loading, reload } = useFetch(`/maintenance/${id}`);
   const report = data?.report;
@@ -95,7 +95,7 @@ function DetailModal({ id, onClose, onChanged }) {
             </ol>
           </div>
 
-          {isAdmin && isOpen && (
+          {isStaff && isOpen && (
             <div className="space-y-3 rounded border border-slate-200 bg-slate-50 p-4">
               <h4 className="text-sm font-semibold">Update status</h4>
               <Field label="New status">
@@ -123,7 +123,7 @@ function DetailModal({ id, onClose, onChanged }) {
 }
 
 export default function Maintenance() {
-  const { isAdmin } = useAuth();
+  const { isStaff } = useAuth();
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [reporting, setReporting] = useState(false);
@@ -134,7 +134,7 @@ export default function Maintenance() {
     <>
       <PageHeader
         title="Maintenance and damage reports"
-        description={isAdmin ? 'Triage reports and track repairs.' : 'Report faulty equipment and follow the repair progress.'}
+        description={isStaff ? 'Triage reports and track repairs.' : 'Report faulty equipment and follow the repair progress.'}
         actions={
           <Button icon={Plus} onClick={() => setReporting(true)}>
             Report an issue

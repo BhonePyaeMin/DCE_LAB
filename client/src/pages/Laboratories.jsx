@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarDays, Clock, FlaskConical, MapPin, Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { Clock, FlaskConical, MapPin, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import api, { assetUrl, errorMessage, toFormData } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -98,7 +97,6 @@ function LabForm({ lab, onClose, onSaved }) {
 export default function Laboratories() {
   const { isAdmin } = useAuth();
   const toast = useToast();
-  const navigate = useNavigate();
   const [q, setQ] = useState('');
   const query = useDebounce(q);
   const { data, loading, error, reload } = useFetch('/laboratories', { params: { q: query || undefined }, watch: ['laboratories'] });
@@ -124,7 +122,7 @@ export default function Laboratories() {
     <>
       <PageHeader
         title="Laboratories"
-        description="Browse rooms, facilities and opening hours, then reserve a session."
+        description="Browse the department laboratories, their facilities and opening hours."
         actions={
           <>
             <SearchInput value={q} onChange={setQ} placeholder="Search laboratories" className="w-56" />
@@ -192,9 +190,6 @@ export default function Laboratories() {
                   )}
                   {lab.description && <p className="mt-3 line-clamp-2 text-sm text-slate-500">{lab.description}</p>}
                   <div className="mt-auto flex items-center gap-2 pt-4">
-                    <Button size="sm" icon={CalendarDays} disabled={lab.status !== 'active'} onClick={() => navigate(`/reservations?lab=${lab._id}`)}>
-                      Reserve
-                    </Button>
                     {isAdmin && (
                       <>
                         <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(lab)}>

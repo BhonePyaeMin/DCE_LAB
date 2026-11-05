@@ -5,14 +5,15 @@ import { connectDB, disconnectDB } from '../config/db.js';
 import User from '../models/User.js';
 import Laboratory from '../models/Laboratory.js';
 import Equipment from '../models/Equipment.js';
-import Reservation from '../models/Reservation.js';
 import Borrowing from '../models/Borrowing.js';
 import Counter from '../models/Counter.js';
+import { CATEGORY_IMAGES } from './constants.js';
 
 export const DEMO_PASSWORD = process.env.SEED_PASSWORD || 'DceLab@2025';
 
 export const DEMO_ACCOUNTS = [
   { name: 'Lab Administrator', email: 'admin@dcelab.test', role: 'admin', identifier: 'STAFF-001', department: 'Digital and Communication Engineering' },
+  { name: 'Kanya Lab Assistant', email: 'assistant@dcelab.test', role: 'assistant', identifier: 'STAFF-050', department: 'Digital and Communication Engineering' },
   { name: 'Dr. Napat Chaiwong', email: 'lecturer@dcelab.test', role: 'lecturer', identifier: 'STAFF-102', department: 'Digital and Communication Engineering' },
   { name: 'Mali Suksan', email: 'student@dcelab.test', role: 'student', identifier: '6531501001', department: 'Digital and Communication Engineering' },
   { name: 'Arthit Prasert', email: 'student2@dcelab.test', role: 'student', identifier: '6531501002', department: 'Digital and Communication Engineering' },
@@ -45,7 +46,7 @@ const EQUIPMENT = [
 
 const DAY = 24 * 60 * 60 * 1000;
 
-/** Inserts demo users, laboratories, equipment and a few sample transactions. */
+/** Inserts demo users, laboratories, equipment and sample borrowing records. */
 export async function seedDatabase() {
   const users = {};
   for (const account of DEMO_ACCOUNTS) {
@@ -53,22 +54,32 @@ export async function seedDatabase() {
   }
   const labs = await Laboratory.insertMany(LABS);
   const equipment = [];
-  for (const item of EQUIPMENT) equipment.push(await Equipment.create({ ...item, available: item.quantity }));
+  for (const item of EQUIPMENT) {
+    equipment.push(await Equipment.create({ ...item, available: item.quantity, image: CATEGORY_IMAGES[item.category] }));
+  }
+  const byName = (name) => equipment.find((e) => e.name === name);
 
-  // Sample reservations: one approved tomorrow at 10:00 lab time, one pending the day after.
-  const offsetMs = env.LAB_UTC_OFFSET_MINUTES * 60 * 1000;
-  const labMidnightToday = Math.floor((Date.now() + offsetMs) / DAY) * DAY - offsetMs;
-  const at = (days, hour) => new Date(labMidnightToday + days * DAY + hour * 60 * 60 * 1000);
-  await Reservation.create([
-    { user: users.lecturer._id, laboratory: labs[0]._id, startTime: at(1, 10), endTime: at(1, 12), purpose: 'Embedded systems practical - week 8', attendees: 24, status: 'approved', reviewedBy: users.admin._id, reviewedAt: new Date() },
-    { user: users['student@dcelab.test']._id, laboratory: labs[4]._id, startTime: at(2, 13), endTime: at(2, 15), purpose: 'Capstone project team meeting', attendees: 5 },
-  ]);
-
-  // Sample borrowing: an approved request reserves stock exactly like the real workflow does.
-  const arduino = equipment[2];
-  await Borrowing.create({ user: users['student@dcelab.test']._id, equipment: arduino._id, quantity: 2, purpose: 'IoT mini project', borrowDate: new Date(), dueDate: new Date(Date.now() + 7 * DAY), status: 'approved', reviewedBy: users.admin._id, reviewedAt: new Date() });
-  await Equipment.updateOne({ _id: arduino._id }, { $inc: { available: -2 } });
-  await Borrowing.create({ user: users['student2@dcelab.test']._id, equipment: equipment[0]._id, quantity: 1, purpose: 'Group assignment', borrowDate: new Date(), dueDate: new Date(Date.now() + 5 * DAY) });
+  // Sample borrowing records. Approved and borrowed requests hold stock exactly like the real workflow does.
+  const student = users['student@dcelab.test'];
+  const student2 = users['student2@dcelab.test'];
+  const at = (days) => new Date(Date.now() + days * DAY);
+  const samples = [
+    { user: student, item: 'Arduino Uno R3', quantity: 2, purpose: 'IoT mini project', borrowDate: at(0), dueDate: at(7), status: 'approved' },
+    { user: student, item: 'Digital Multimeter', quantity: 1, purpose: 'Circuit debugging for lab 4', borrowDate: at(-1), dueDate: at(2), status: 'borrowed', borrowedAt: at(-1) },
+    { user: users.lecturer, item: 'Canon EOS R50 Camera', quantity: 1, purpose: 'Recording a lecture demo', borrowDate: at(2), dueDate: at(4), status: 'approved' },
+    { user: student2, item: 'Dell Latitude 5440 Laptop', quantity: 1, purpose: 'Group assignment', borrowDate: at(1), dueDate: at(5), status: 'pending' },
+  ];
+  for (const { user, item, ...rest } of samples) {
+    const equipmentDoc = byName(item);
+    const holdsStock = ['approved', 'borrowed'].includes(rest.status);
+    await Borrowing.create({
+      ...rest,
+      user: user._id,
+      equipment: equipmentDoc._id,
+      ...(holdsStock ? { reviewedBy: users.admin._id, reviewedAt: new Date() } : {}),
+    });
+    if (holdsStock) await Equipment.updateOne({ _id: equipmentDoc._id }, { $inc: { available: -rest.quantity } });
+  }
 
   console.log(`[seed] created ${DEMO_ACCOUNTS.length} users, ${labs.length} laboratories, ${equipment.length} equipment items`);
 }
@@ -83,7 +94,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   if (env.MONGODB_URI) {
     await mongoose.connection.dropDatabase();
   } else {
-    await Promise.all([User, Laboratory, Equipment, Reservation, Borrowing, Counter].map((m) => m.deleteMany({})));
+    await Promise.all([User, Laboratory, Equipment, Borrowing, Counter].map((m) => m.deleteMany({})));
   }
   await seedDatabase();
   console.log('[seed] demo accounts (password from SEED_PASSWORD or the default in server/utils/seed.js):');

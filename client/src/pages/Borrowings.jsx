@@ -5,17 +5,18 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../hooks/useFetch.js';
 import { Card, EmptyState, ErrorNotice, PageHeader, Pagination, Segmented, TableSkeleton } from '../components/ui.jsx';
 import { StatusBadge } from '../components/StatusBadge.jsx';
+import { EquipmentImage } from '../components/EquipmentImage.jsx';
 import { BorrowingActions } from '../components/BorrowingActions.jsx';
 import { fmtDate } from '../utils/format.js';
 
 const STATUS_FILTERS = ['', 'pending', 'approved', 'borrowed', 'overdue', 'returned', 'damaged', 'rejected', 'cancelled'];
 
 export default function Borrowings() {
-  const { isAdmin, isLecturer } = useAuth();
+  const { isStaff, isLecturer } = useAuth();
   const [status, setStatus] = useState('');
   const [scope, setScope] = useState('mine');
   const [page, setPage] = useState(1);
-  const seesAll = isAdmin || (isLecturer && scope === 'all');
+  const seesAll = isStaff || (isLecturer && scope === 'all');
 
   const { data, loading, error, reload } = useFetch('/borrowings', {
     params: { status: status || undefined, scope: isLecturer && scope === 'all' ? 'all' : undefined, page, limit: 10 },
@@ -26,7 +27,7 @@ export default function Borrowings() {
     <>
       <PageHeader
         title="Equipment borrowing"
-        description={isAdmin ? 'Review requests, check equipment out and process returns.' : 'Track your borrowing requests and return dates.'}
+        description={isStaff ? 'Review requests, check equipment out and process returns.' : 'Track your borrowing requests and return dates.'}
         actions={
           isLecturer && (
             <Segmented
@@ -87,8 +88,13 @@ export default function Borrowings() {
                   {data?.items.map((b) => (
                     <motion.tr key={b._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                       <td className="td">
-                        <p className="font-medium text-slate-900">{b.equipment?.name}</p>
-                        <p className="text-xs text-slate-400">{b.equipment?.equipmentId}</p>
+                        <div className="flex items-center gap-3">
+                          <EquipmentImage item={b.equipment} className="h-11 w-14 shrink-0 rounded" />
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900">{b.equipment?.name}</p>
+                            <p className="text-xs text-slate-400">{b.equipment?.equipmentId}</p>
+                          </div>
+                        </div>
                       </td>
                       {seesAll && (
                         <td className="td">

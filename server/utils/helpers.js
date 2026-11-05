@@ -1,25 +1,4 @@
-import { env } from '../config/env.js';
-
-const MINUTE = 60 * 1000;
-const DAY = 24 * 60 * MINUTE;
-
 export const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-/** Minutes since local midnight (laboratory time zone) for a Date. */
-export function localMinutes(date) {
-  const shifted = date.getTime() + env.LAB_UTC_OFFSET_MINUTES * MINUTE;
-  return Math.floor(((shifted % DAY) + DAY) % DAY / MINUTE);
-}
-
-/** Index of the local calendar day (laboratory time zone) for a Date. */
-export function localDayIndex(date) {
-  return Math.floor((date.getTime() + env.LAB_UTC_OFFSET_MINUTES * MINUTE) / DAY);
-}
-
-export function parseHHMM(value) {
-  const [h, m] = String(value).split(':').map(Number);
-  return h * 60 + m;
-}
 
 export function parsePagination(query, defaults = { page: 1, limit: 20, max: 100 }) {
   const page = Math.max(1, parseInt(query.page, 10) || defaults.page);

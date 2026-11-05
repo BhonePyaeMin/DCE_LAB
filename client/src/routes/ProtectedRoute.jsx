@@ -16,7 +16,7 @@ export function ProtectedRoute({ roles }) {
   const location = useLocation();
   if (loading) return <FullPageSpinner />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />;
+  if (roles && !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
 
@@ -24,6 +24,6 @@ export function ProtectedRoute({ roles }) {
 export function GuestRoute() {
   const { user, loading } = useAuth();
   if (loading) return <FullPageSpinner />;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }

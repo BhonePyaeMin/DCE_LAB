@@ -41,6 +41,7 @@ const STATUS_TONE = {
   // roles
   admin: 'red',
   lecturer: 'blue',
+  assistant: 'violet',
   student: 'slate',
 };
 

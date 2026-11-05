@@ -21,7 +21,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register(Object.fromEntries(Object.entries(form).filter(([, v]) => v !== '')));
-      navigate('/', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {

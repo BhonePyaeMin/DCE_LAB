@@ -5,8 +5,12 @@ import { IconButton } from './ui.jsx';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-/** Month grid. `markers` maps 'yyyy-MM-dd' to { approved, pending } counts. */
-export function MonthCalendar({ month, onMonthChange, selected, onSelect, markers = {} }) {
+/**
+ * Month grid.
+ * `markers` maps 'yyyy-MM-dd' to a list of { label, count, className } chips shown in the day cell;
+ * `legend` lists { label, className } swatches shown under the grid.
+ */
+export function MonthCalendar({ month, onMonthChange, selected, onSelect, markers = {}, legend = [] }) {
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(month), { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }),
@@ -36,22 +40,26 @@ export function MonthCalendar({ month, onMonthChange, selected, onSelect, marker
         <motion.div key={monthKey} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.14 }} className="grid grid-cols-7 border-l border-slate-200">
           {days.map((day) => {
             const key = format(day, 'yyyy-MM-dd');
-            const mark = markers[key];
+            const chips = markers[key] || [];
             const active = selected && isSameDay(day, selected);
             const outside = !isSameMonth(day, month);
+            const summary = chips.map((c) => `${c.count} ${c.label}`).join(', ');
             return (
               <button
                 key={key}
                 onClick={() => onSelect(day)}
-                aria-label={`${format(day, 'EEEE d MMMM')}${mark ? `, ${mark.approved} approved, ${mark.pending} pending` : ''}`}
+                aria-label={`${format(day, 'EEEE d MMMM')}${summary ? `, ${summary}` : ''}`}
                 aria-pressed={active}
                 className={`relative flex h-16 flex-col items-start border-b border-r border-slate-200 p-1.5 text-left transition-colors sm:h-20 ${active ? 'bg-brand-50' : outside ? 'bg-slate-50/60 text-slate-400' : 'bg-white hover:bg-slate-50'}`}
               >
                 <span className={`flex h-6 w-6 items-center justify-center rounded text-xs font-medium ${isToday(day) ? 'bg-brand-600 text-white' : active ? 'text-brand-700' : ''}`}>{format(day, 'd')}</span>
-                {mark && (
+                {chips.length > 0 && (
                   <span className="mt-auto flex flex-wrap gap-1">
-                    {mark.approved > 0 && <span className="rounded bg-sky-100 px-1 text-[10px] font-semibold text-sky-800">{mark.approved}</span>}
-                    {mark.pending > 0 && <span className="rounded bg-amber-100 px-1 text-[10px] font-semibold text-amber-800">{mark.pending}</span>}
+                    {chips.map((c) => (
+                      <span key={c.label} className={`rounded px-1 text-[10px] font-semibold ${c.className}`}>
+                        {c.count}
+                      </span>
+                    ))}
                   </span>
                 )}
                 {active && <motion.span layoutId="cal-active" className="pointer-events-none absolute inset-0 border-2 border-brand-600" transition={{ duration: 0.15 }} />}
@@ -60,14 +68,15 @@ export function MonthCalendar({ month, onMonthChange, selected, onSelect, marker
           })}
         </motion.div>
       </AnimatePresence>
-      <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-sky-200" /> Approved
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-amber-200" /> Pending
-        </span>
-      </div>
+      {legend.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+          {legend.map((l) => (
+            <span key={l.label} className="flex items-center gap-1.5">
+              <span className={`h-2.5 w-2.5 rounded-sm ${l.className}`} /> {l.label}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

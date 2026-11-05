@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { addDays } from 'date-fns';
-import { ClipboardList, Package, Pencil, Plus, QrCode, Trash2, Wrench } from 'lucide-react';
-import api, { assetUrl, errorMessage, toFormData } from '../services/api.js';
+import { ClipboardList, ImagePlus, Package, Pencil, Plus, QrCode, Trash2, Wrench } from 'lucide-react';
+import api, { errorMessage, toFormData } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useFetch } from '../hooks/useFetch.js';
 import { useDebounce } from '../hooks/useDebounce.js';
-import { Button, Card, EmptyState, ErrorNotice, Field, IconButton, PageHeader, Pagination, SearchInput, TableSkeleton } from '../components/ui.jsx';
+import { Button, EmptyState, ErrorNotice, Field, IconButton, PageHeader, Pagination, SearchInput, Skeleton } from '../components/ui.jsx';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { StatusBadge } from '../components/StatusBadge.jsx';
+import { EquipmentImage } from '../components/EquipmentImage.jsx';
 import { QrModal } from '../components/QrModal.jsx';
 import { ReportIssueModal } from '../components/ReportIssueModal.jsx';
 import { toDateInput } from '../utils/format.js';
@@ -24,11 +25,24 @@ function EquipmentForm({ item, categories, onClose, onSaved }) {
       : { name: '', category: categories[0]?.name || '', brand: '', model: '', location: '', quantity: 1, condition: 'good', maxBorrowDays: 7, description: '', isActive: true }
   );
   const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState('');
   const [saving, setSaving] = useState(false);
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
+  // Preview of the newly chosen photo; the object URL is released when the file changes.
+  useEffect(() => {
+    if (!file) {
+      setPreview('');
+      return undefined;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
   const submit = async (e) => {
     e.preventDefault();
+    if (!item && !file) return toast.error('Please add a photo of the equipment');
     setSaving(true);
     try {
       const body = toFormData({ ...form, isActive: String(form.isActive) }, { image: file });
@@ -42,6 +56,8 @@ function EquipmentForm({ item, categories, onClose, onSaved }) {
       setSaving(false);
     }
   };
+
+  const shownImage = preview || item?.image;
 
   return (
     <Modal
@@ -61,6 +77,18 @@ function EquipmentForm({ item, categories, onClose, onSaved }) {
       }
     >
       <form id="equipment-form" onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+        <Field label={item ? 'Photo' : 'Photo (required)'} hint={item ? 'Choose a file to replace the current photo.' : 'JPEG, PNG or WebP, up to 5 MB.'} className="sm:col-span-2">
+          <div className="flex items-center gap-4">
+            {shownImage ? (
+              <EquipmentImage key={shownImage} item={{ category: form.category, image: shownImage }} alt="Equipment preview" className="h-20 w-28 shrink-0 rounded border border-slate-200" />
+            ) : (
+              <span className="flex h-20 w-28 shrink-0 items-center justify-center rounded border border-dashed border-slate-300 text-slate-400">
+                <ImagePlus size={24} />
+              </span>
+            )}
+            <input className="input" type="file" accept="image/jpeg,image/png,image/webp" required={!item} onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          </div>
+        </Field>
         <Field label="Name" className="sm:col-span-2">
           <input className="input" required value={form.name} onChange={set('name')} />
         </Field>
@@ -96,9 +124,6 @@ function EquipmentForm({ item, categories, onClose, onSaved }) {
         </Field>
         <Field label="Maximum borrowing days">
           <input className="input" type="number" min="1" max="90" required value={form.maxBorrowDays} onChange={set('maxBorrowDays')} />
-        </Field>
-        <Field label="Photo" hint="JPEG, PNG or WebP, up to 5 MB.">
-          <input className="input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </Field>
         <Field label="Description" className="sm:col-span-2">
           <textarea className="input" rows={3} value={form.description} onChange={set('description')} />
@@ -159,10 +184,16 @@ function BorrowModal({ item, onClose, onCreated }) {
       }
     >
       <form id="borrow-form" onSubmit={submit} className="space-y-4">
-        <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-          <span className="font-medium">{item.name}</span> <span className="text-slate-400">({item.equipmentId})</span>
-          <span className="block text-xs text-slate-500">{item.available} available - up to {item.maxBorrowDays} days</span>
-        </p>
+        <div className="flex items-center gap-3 rounded border border-slate-200 bg-slate-50 p-2">
+          <EquipmentImage item={item} className="h-14 w-20 shrink-0 rounded" />
+          <p className="min-w-0 text-sm">
+            <span className="block truncate font-medium">{item.name}</span>
+            <span className="block text-xs text-slate-400">{item.equipmentId}</span>
+            <span className="block text-xs text-slate-500">
+              {item.available} available - up to {item.maxBorrowDays} days
+            </span>
+          </p>
+        </div>
         <Field label="Quantity">
           <input className="input" type="number" min="1" max={item.available} required value={form.quantity} onChange={set('quantity')} />
         </Field>
@@ -200,7 +231,7 @@ export default function Equipment() {
 
   const categories = useFetch('/equipment/categories').data?.items || [];
   const { data, loading, error, reload } = useFetch('/equipment', {
-    params: { q: query || undefined, category: category || undefined, condition: condition || undefined, available: onlyAvailable ? 'true' : undefined, page, limit: 10 },
+    params: { q: query || undefined, category: category || undefined, condition: condition || undefined, available: onlyAvailable ? 'true' : undefined, page, limit: 12 },
     watch: ['equipment'],
   });
 
@@ -237,105 +268,98 @@ export default function Equipment() {
         }
       />
 
-      <Card padded={false}>
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3">
-          <SearchInput value={q} onChange={reset(setQ)} placeholder="Search name, ID or brand" className="w-full sm:w-64" />
-          <select className="input w-auto py-2" value={category} onChange={(e) => reset(setCategory)(e.target.value)} aria-label="Category">
-            <option value="">All categories</option>
-            {categories.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <select className="input w-auto py-2" value={condition} onChange={(e) => reset(setCondition)(e.target.value)} aria-label="Condition">
-            <option value="">Any condition</option>
-            {CONDITIONS.map((c) => (
-              <option key={c} value={c}>
-                {c[0].toUpperCase() + c.slice(1)}
-              </option>
-            ))}
-          </select>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <input type="checkbox" checked={onlyAvailable} onChange={(e) => reset(setOnlyAvailable)(e.target.checked)} />
-            Available only
-          </label>
-        </div>
-        <ErrorNotice message={error} onRetry={reload} />
+      <div className="card mb-5 flex flex-wrap items-center gap-2 p-3">
+        <SearchInput value={q} onChange={reset(setQ)} placeholder="Search name, ID or brand" className="w-full sm:w-64" />
+        <select className="input w-auto py-2" value={category} onChange={(e) => reset(setCategory)(e.target.value)} aria-label="Category">
+          <option value="">All categories</option>
+          {categories.map((c) => (
+            <option key={c.name} value={c.name}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select className="input w-auto py-2" value={condition} onChange={(e) => reset(setCondition)(e.target.value)} aria-label="Condition">
+          <option value="">Any condition</option>
+          {CONDITIONS.map((c) => (
+            <option key={c} value={c}>
+              {c[0].toUpperCase() + c.slice(1)}
+            </option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" checked={onlyAvailable} onChange={(e) => reset(setOnlyAvailable)(e.target.checked)} />
+          Available only
+        </label>
+      </div>
+      <ErrorNotice message={error} onRetry={reload} />
 
-        {loading && !data ? (
-          <TableSkeleton cols={6} />
-        ) : data?.items.length === 0 ? (
+      {loading && !data ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="card overflow-hidden">
+              <Skeleton className="aspect-[4/3] rounded-none" />
+              <div className="space-y-2 p-4">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : data?.items.length === 0 ? (
+        <div className="card">
           <EmptyState icon={Package} title="No equipment found" description="Adjust the filters or search term." />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px]">
-              <thead>
-                <tr>
-                  <th className="th">Equipment</th>
-                  <th className="th">Category</th>
-                  <th className="th">Availability</th>
-                  <th className="th">Condition</th>
-                  <th className="th">Location</th>
-                  <th className="th text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence initial={false}>
-                  {data?.items.map((item) => (
-                    <motion.tr key={item._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={item.isActive ? '' : 'opacity-60'}>
-                      <td className="td">
-                        <div className="flex items-center gap-3">
-                          {item.image ? (
-                            <img src={assetUrl(item.image)} alt="" className="h-10 w-10 rounded object-cover" loading="lazy" />
-                          ) : (
-                            <span className="flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-slate-400">
-                              <Package size={18} />
-                            </span>
-                          )}
-                          <div>
-                            <p className="font-medium text-slate-900">{item.name}</p>
-                            <p className="text-xs text-slate-400">
-                              {item.equipmentId}
-                              {!item.isActive && ' - hidden'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="td">{item.category}</td>
-                      <td className="td">
-                        <span className={`font-semibold ${item.available === 0 ? 'text-brand-700' : 'text-slate-900'}`}>{item.available}</span>
-                        <span className="text-slate-400"> / {item.quantity}</span>
-                        {item.damaged > 0 && <span className="block text-xs text-brand-700">{item.damaged} damaged</span>}
-                      </td>
-                      <td className="td">
-                        <StatusBadge status={item.condition} />
-                      </td>
-                      <td className="td">{item.location || '-'}</td>
-                      <td className="td">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button size="sm" icon={ClipboardList} disabled={item.available === 0 || !item.isActive} onClick={() => setBorrowing(item)}>
-                            Borrow
-                          </Button>
-                          <IconButton icon={QrCode} label={`QR code for ${item.name}`} onClick={() => setQr(item)} />
-                          <IconButton icon={Wrench} label={`Report issue with ${item.name}`} onClick={() => setReporting(item)} />
-                          {isAdmin && (
-                            <>
-                              <IconButton icon={Pencil} label={`Edit ${item.name}`} onClick={() => setEditing(item)} />
-                              <IconButton icon={Trash2} label={`Delete ${item.name}`} onClick={() => setDeleting(item)} className="hover:text-brand-700" />
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              </tbody>
-            </table>
-          </div>
-        )}
+        </div>
+      ) : (
+        <motion.div layout className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <AnimatePresence initial={false}>
+            {data?.items.map((item) => (
+              <motion.article key={item._id} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} className={`card flex flex-col overflow-hidden ${item.isActive ? '' : 'opacity-60'}`}>
+                <EquipmentImage item={item} className="aspect-[4/3] w-full" />
+                <div className="flex flex-1 flex-col p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="truncate font-semibold" title={item.name}>
+                        {item.name}
+                      </h2>
+                      <p className="text-xs text-slate-400">
+                        {item.equipmentId}
+                        {!item.isActive && ' - hidden'}
+                      </p>
+                    </div>
+                    <StatusBadge status={item.condition} />
+                  </div>
+                  <p className="mt-1 truncate text-xs text-slate-500">{item.category}</p>
+                  <div className="mt-3 flex items-baseline justify-between text-sm">
+                    <span>
+                      <span className={`text-lg font-bold ${item.available === 0 ? 'text-brand-700' : 'text-slate-900'}`}>{item.available}</span>
+                      <span className="text-slate-400"> / {item.quantity} available</span>
+                    </span>
+                    {item.location && <span className="truncate pl-2 text-xs text-slate-400">{item.location}</span>}
+                  </div>
+                  {item.damaged > 0 && <p className="text-xs text-brand-700">{item.damaged} unit(s) damaged</p>}
+                  <div className="mt-auto flex items-center gap-1 pt-4">
+                    <Button size="sm" icon={ClipboardList} className="flex-1" disabled={item.available === 0 || !item.isActive} onClick={() => setBorrowing(item)}>
+                      Borrow
+                    </Button>
+                    <IconButton icon={QrCode} label={`QR code for ${item.name}`} onClick={() => setQr(item)} />
+                    <IconButton icon={Wrench} label={`Report issue with ${item.name}`} onClick={() => setReporting(item)} />
+                    {isAdmin && (
+                      <>
+                        <IconButton icon={Pencil} label={`Edit ${item.name}`} onClick={() => setEditing(item)} />
+                        <IconButton icon={Trash2} label={`Delete ${item.name}`} onClick={() => setDeleting(item)} className="hover:text-brand-700" />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      )}
+      <div className="card mt-5">
         <Pagination page={data?.page} pages={data?.pages} total={data?.total} onChange={setPage} />
-      </Card>
+      </div>
 
       {editing && (
         <EquipmentForm

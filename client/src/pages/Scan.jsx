@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Camera, CameraOff, MapPin, QrCode, Search, Wrench } from 'lucide-react';
-import api, { assetUrl, errorMessage } from '../services/api.js';
+import api, { errorMessage } from '../services/api.js';
+import { EquipmentImage } from '../components/EquipmentImage.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { Button, Card, EmptyState, Spinner, PageHeader } from '../components/ui.jsx';
 import { StatusBadge } from '../components/StatusBadge.jsx';
@@ -44,13 +45,7 @@ function ScanResult({ code }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <div className="flex gap-4">
-        {e.image ? (
-          <img src={assetUrl(e.image)} alt="" className="h-20 w-20 rounded object-cover" />
-        ) : (
-          <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-300">
-            <QrCode size={32} />
-          </span>
-        )}
+        <EquipmentImage item={e} className="h-24 w-32 shrink-0 rounded" />
         <div className="min-w-0">
           <h2 className="text-lg font-semibold">{e.name}</h2>
           <p className="text-sm text-slate-500">
