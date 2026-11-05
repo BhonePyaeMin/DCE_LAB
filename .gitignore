@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment files (use the .env.example templates)
+.env
+.env.*
+!.env.example
+
+# Build output
+client/dist/
+
+# Local data
+server/.mongo-data/
+server/uploads/
+
+# Logs and tooling
+*.log
+.claude/
+.vscode/
+.DS_Store
+Thumbs.db

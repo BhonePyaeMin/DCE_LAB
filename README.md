@@ -371,37 +371,40 @@ Each collection should include appropriate timestamps and references to related 
 
 ---
 
-## 8. Suggested Project Structure
+## 8. Project Structure
 
 ```text
-dce-lab/
+DCE_LAB/
 │
-├── client/
+├── client/                     React + Vite + Tailwind CSS frontend
 │   ├── public/
 │   └── src/
+│       ├── animations/         Shared Framer Motion variants
 │       ├── assets/
-│       ├── components/
-│       ├── layouts/
-│       ├── pages/
-│       ├── hooks/
-│       ├── services/
-│       ├── context/
-│       ├── routes/
+│       ├── components/         Reusable UI (modals, badges, calendar, QR, ...)
+│       ├── context/            Auth, toast and notification providers
+│       ├── hooks/              useFetch (with live refresh), useDebounce
+│       ├── layouts/            App shell, sidebar, top bar, auth layout
+│       ├── pages/              One file per screen
+│       ├── routes/             Protected / guest route guards
+│       ├── services/           Axios API client and Socket.IO client
 │       ├── utils/
-│       ├── animations/
 │       └── App.jsx
 │
-├── server/
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── services/
-│   ├── sockets/
-│   ├── utils/
+├── server/                     Express + MongoDB backend
+│   ├── config/                 Environment and database connection
+│   ├── controllers/            Request handlers and zod schemas
+│   ├── middleware/             Auth, RBAC, validation, uploads, errors
+│   ├── models/                 Mongoose models
+│   ├── routes/                 REST route definitions
+│   ├── services/               Notifications, audit log, storage, scheduler
+│   ├── sockets/                Socket.IO setup
+│   ├── tests/                  Integration tests (node:test)
+│   ├── utils/                  Helpers, constants, demo seed data
+│   ├── app.js
 │   └── server.js
 │
+├── package.json                Convenience scripts for the whole project
 ├── .gitignore
 └── README.md
 ```
@@ -412,26 +415,27 @@ dce-lab/
 
 ### Prerequisites
 
-- Node.js (LTS)
+- Node.js 18 or newer (LTS recommended)
 - npm
-- MongoDB Atlas or local MongoDB
 - Git
+- MongoDB Atlas or a local MongoDB (optional in development - see below)
 
 ### Clone Repository
 
 ```bash
-git clone <repository-url>
-cd dce-lab
+git clone https://github.com/Swann-Htet/DCE_LAB.git
+cd DCE_LAB
+```
+
+### Install Dependencies
+
+```bash
+npm run install:all
 ```
 
 ### Backend Setup
 
-```bash
-cd server
-npm install
-```
-
-Create a `.env` file:
+Copy `server/.env.example` to `server/.env` and adjust it:
 
 ```env
 PORT=5000
@@ -444,30 +448,83 @@ JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:5173
 ```
 
+In development you can leave `MONGODB_URI` empty: the server then starts an embedded MongoDB
+(data is kept in `server/.mongo-data`) and seeds demo data on the first start. The first run downloads the
+MongoDB binary once. `MONGODB_URI` and `JWT_SECRET` are mandatory when `NODE_ENV=production`.
+
 Start the backend:
 
 ```bash
-npm run dev
+npm run dev:server
 ```
 
 ### Frontend Setup
 
-```bash
-cd client
-npm install
-```
-
-Create a `.env` file:
+Optionally copy `client/.env.example` to `client/.env`. By default the Vite dev server proxies `/api`,
+`/uploads` and `/socket.io` to `http://localhost:5000`, so no configuration is required locally.
 
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-Start the frontend:
+Start the frontend (a second terminal):
 
 ```bash
-npm run dev
+npm run dev:client
 ```
+
+Open http://localhost:5173.
+
+### Demo Accounts
+
+`npm run seed` (also run automatically on the first development start) creates demo data and these accounts.
+The shared password is set by `SEED_PASSWORD`, or defaults to the value in `server/utils/seed.js`.
+These accounts are for local development only; never seed a production database.
+
+| Role | Email |
+|---|---|
+| Laboratory Administrator | admin@dcelab.test |
+| Lecturer | lecturer@dcelab.test |
+| Student | student@dcelab.test |
+
+### Other Commands
+
+| Command | Description |
+|---|---|
+| `npm test` | Run the backend integration test suite |
+| `npm run seed` | Reset the configured database and load demo data |
+| `npm run build` | Production build of the frontend (`client/dist`) |
+
+### Optional Settings
+
+| Variable | Purpose |
+|---|---|
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Store uploaded images on Cloudinary. Without them images are saved in `server/uploads`. |
+| `LAB_UTC_OFFSET_MINUTES` | Laboratory time zone offset used for opening-hour checks (default `420`, UTC+7). |
+| `SERVER_URL` | Public API origin prefixed to local upload URLs when the client and API are on different origins. |
+
+### API Overview
+
+All endpoints live under `/api` and (except login and registration) require a `Bearer` token.
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /auth/register`, `POST /auth/login`, `GET/PATCH /auth/me`, `POST /auth/change-password` |
+| Users (admin) | `GET/POST /users`, `PATCH/DELETE /users/:id`, `GET /users/activity-logs` |
+| Laboratories | `GET /laboratories`, `GET /laboratories/:id`, admin: `POST`, `PATCH /:id`, `DELETE /:id` |
+| Reservations | `GET/POST /reservations`, `GET /reservations/schedule`, `PATCH /:id/review`, `PATCH /:id/cancel` |
+| Equipment | `GET /equipment`, `GET /equipment/categories`, `GET /equipment/code/:code`, `GET /equipment/:id/qr`, admin: `POST`, `PATCH /:id`, `DELETE /:id` |
+| Borrowings | `GET/POST /borrowings`, admin: `PATCH /:id/review`, `/collect`, `/return`; `PATCH /:id/cancel` |
+| Maintenance | `GET/POST /maintenance`, `GET /maintenance/:id`, admin: `PATCH /:id` |
+| Notifications | `GET /notifications`, `PATCH /:id/read`, `PATCH /read-all`, `DELETE /:id` |
+| Analytics | `GET /analytics/dashboard`, `GET /analytics/reports`, admin: `GET /analytics/reports/export/:type` |
+
+### How Stock Is Tracked
+
+Each equipment record keeps `quantity` (units owned), `available` (units free to borrow) and `damaged`
+(units out of service). Approving a borrowing request reserves the units, a return releases them, and units
+returned damaged are held back while a maintenance report is open. Resolving the report puts them back on the
+shelf; marking it unrepairable writes them off.
 
 ---
 
@@ -492,37 +549,37 @@ Security is important because the platform manages university resources and stud
 ## 11. Development Roadmap
 
 ### Phase 1 — Foundation
-- [ ] Project initialization.
-- [ ] MERN architecture setup.
-- [ ] MongoDB integration.
-- [ ] Authentication system.
-- [ ] Role-based permissions.
-- [ ] Responsive dashboard.
+- [x] Project initialization.
+- [x] MERN architecture setup.
+- [x] MongoDB integration.
+- [x] Authentication system.
+- [x] Role-based permissions.
+- [x] Responsive dashboard.
 
 ### Phase 2 — Laboratory Management
-- [ ] Laboratory CRUD operations.
-- [ ] Laboratory availability.
-- [ ] Reservation system.
-- [ ] Calendar integration.
-- [ ] Reservation approval workflow.
+- [x] Laboratory CRUD operations.
+- [x] Laboratory availability.
+- [x] Reservation system.
+- [x] Calendar integration.
+- [x] Reservation approval workflow.
 
 ### Phase 3 — Equipment Management
-- [ ] Equipment inventory.
-- [ ] Equipment categories.
-- [ ] Equipment borrowing.
-- [ ] Equipment returning.
-- [ ] QR code generation and scanning.
+- [x] Equipment inventory.
+- [x] Equipment categories.
+- [x] Equipment borrowing.
+- [x] Equipment returning.
+- [x] QR code generation and scanning.
 
 ### Phase 4 — Maintenance & Notifications
-- [ ] Damage reporting.
-- [ ] Maintenance tracking.
-- [ ] Real-time notifications.
-- [ ] Overdue reminders.
+- [x] Damage reporting.
+- [x] Maintenance tracking.
+- [x] Real-time notifications.
+- [x] Overdue reminders.
 
 ### Phase 5 — Analytics & Deployment
-- [ ] Analytics dashboard.
-- [ ] Report generation.
-- [ ] Activity logs.
+- [x] Analytics dashboard.
+- [x] Report generation.
+- [x] Activity logs.
 - [ ] Security testing.
 - [ ] Production deployment.
 
