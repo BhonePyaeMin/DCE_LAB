@@ -501,8 +501,8 @@ running `npm run seed`, because both use the same embedded database folder.
 
 ### Deploying to Vercel
 
-DCE Lab deploys as **two Vercel projects** from this one repository: the API (`server`) and the website
-(`client`). MongoDB Atlas hosts the data.
+DCE Lab deploys to Vercel as **one project**: the website and the API share a single domain (the repository root
+`vercel.json` builds the client and runs the API as a serverless function under `/api`). MongoDB Atlas hosts the data.
 
 **1. MongoDB Atlas**
 
@@ -510,29 +510,22 @@ DCE Lab deploys as **two Vercel projects** from this one repository: the API (`s
   `mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/dcelab?retryWrites=true&w=majority`.
 - Under **Network Access**, allow `0.0.0.0/0` (Vercel functions have no fixed IP address).
 
-**2. API project** (Vercel -> Add New -> Project -> import this repo)
+**2. Vercel project** (Add New -> Project -> import this repository)
 
-- **Root Directory:** `server` (Framework preset: *Other*; leave the build command empty).
-- **Environment variables:**
+- Leave **Root Directory** empty and the framework preset on *Other* (the build settings come from `vercel.json`).
+- **Environment variables** (Settings -> Environment Variables), then redeploy:
 
 | Name | Value |
 |---|---|
 | `MONGODB_URI` | the Atlas connection string from step 1 |
 | `JWT_SECRET` | a long random string |
-| `CLIENT_URL` | the URL of the website project, e.g. `https://dce-lab.vercel.app` (comma separate several) |
-| `SERVER_URL` | the URL of this API project, e.g. `https://dce-lab-api.vercel.app` |
+| `CLIENT_URL` | the project URL, e.g. `https://dcelab.vercel.app` (used for QR code links and CORS) |
 | `CRON_SECRET` | a random string; Vercel Cron sends it to run the daily overdue/reminder job |
 
-- Deploy, then open `https://<api-project>.vercel.app/api/health` to check it answers `{"success":true}`.
+- Do **not** set `VITE_API_URL`: the website then calls `/api` on its own domain.
+- Check `https://<your-project>.vercel.app/api/health`. It should answer `{"success":true,"status":"ok"}`.
 
-**3. Website project** (Add New -> Project -> import the same repo again)
-
-- **Root Directory:** `client` (Framework preset: *Vite*). Leaving the Root Directory empty also works, because the
-  `vercel.json` at the repository root builds the client.
-- **Environment variable:** `VITE_API_URL` = `https://<api-project>.vercel.app/api`.
-- Deploy. Then go back to the API project, set `CLIENT_URL` to the website URL if you had not yet, and redeploy.
-
-**4. Create the first administrator** (run once from your own computer; the credentials stay out of git):
+**3. Create the first administrator** (run once from your own computer; the credentials stay out of git):
 
 ```bash
 cd server
@@ -542,13 +535,17 @@ MONGODB_URI="<atlas connection string>" ADMIN_EMAIL="you@example.com" ADMIN_PASS
 On Windows PowerShell set the variables first, for example `$env:MONGODB_URI="..."`, then run `npm run create-admin`.
 If `mongodb+srv` lookups fail on your network, also set `DNS_SERVERS=8.8.8.8,1.1.1.1`.
 
+**Two projects instead (optional).** You can also deploy `server` (Root Directory `server`) and `client`
+(Root Directory `client`) as separate projects. Then set `VITE_API_URL=https://<api-project>.vercel.app/api` on the
+client project, and `CLIENT_URL` (the website URL) and `SERVER_URL` (the API URL) on the API project.
+
 **Things that differ on Vercel**
 
 - Real-time sockets are not available on serverless hosting, so the website refreshes lists and notifications every
   30 seconds instead (locally it still uses Socket.IO).
 - Uploaded photos are stored in MongoDB and served from `/api/files/...` (use Cloudinary instead by setting its three
   variables). Vercel limits a request body to about 4.5 MB, so uploads are capped at 4 MB.
-- The overdue and reminder job runs once a day through Vercel Cron (`server/vercel.json`); the Hobby plan allows daily runs.
+- The overdue and reminder job runs once a day through Vercel Cron (`vercel.json`); the Hobby plan allows daily runs.
 - Do not run `npm run seed` against production; it deletes data and creates demo accounts.
 
 ---

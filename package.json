@@ -2,7 +2,11 @@
   "name": "dce-lab",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "DCE Lab - Laboratory & Equipment Management System",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "install:all": "npm --prefix server install && npm --prefix client install",
     "dev:server": "npm --prefix server run dev",

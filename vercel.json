@@ -1,7 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm --prefix client install",
+  "installCommand": "npm --prefix client install && npm --prefix server install --omit=dev",
   "buildCommand": "npm --prefix client run build",
   "outputDirectory": "client/dist",
-  "rewrites": [{ "source": "/((?!assets/|favicon|apple-touch-icon).*)", "destination": "/index.html" }]
+  "functions": { "api/index.js": { "maxDuration": 30, "includeFiles": "server/**" } },
+  "crons": [{ "path": "/api/cron/run", "schedule": "0 1 * * *" }],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/((?!assets/|favicon|apple-touch-icon).*)", "destination": "/index.html" }
+  ]
 }
