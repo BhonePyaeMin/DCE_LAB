@@ -77,20 +77,9 @@
   .shimmer-brand {
     background-color: #fbd0d5;
   }
-  /* Skeleton blocks for dark surfaces. */
-  .shimmer-dark {
-    background-color: rgba(255, 255, 255, 0.07);
-    background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.16) 50%, transparent 100%);
-    background-repeat: no-repeat;
-    background-size: 200% 100%;
-    animation: shimmer 1.8s ease-in-out infinite;
-  }
-  .shimmer-dark-brand {
-    background-color: rgba(225, 56, 74, 0.4);
-  }
   /* Slowly drifting grid behind the hero. */
   .hero-grid {
-    background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.06) 1px, transparent 1px);
     background-size: 56px 56px;
     -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 30%, #000 35%, transparent 100%);
     mask-image: radial-gradient(ellipse 85% 70% at 50% 30%, #000 35%, transparent 100%);
@@ -98,7 +87,7 @@
   }
   /* Headline accent: a light band slides through the lettering. */
   .text-shimmer {
-    background-image: linear-gradient(90deg, #ff5c6c 0%, #ffd9cf 35%, #ff5c6c 70%, #ff5c6c 100%);
+    background-image: linear-gradient(90deg, #c8102e 0%, #ff6b7a 35%, #c8102e 70%, #c8102e 100%);
     background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
@@ -107,7 +96,6 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .shimmer,
-    .shimmer-dark,
     .hero-grid,
     .text-shimmer {
       animation: none;
