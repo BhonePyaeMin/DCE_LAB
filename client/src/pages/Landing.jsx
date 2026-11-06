@@ -74,32 +74,22 @@ function LandingSkeleton() {
           <Skeleton className="h-9 w-28" />
         </div>
       </div>
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-12 px-6 lg:grid-cols-2">
-        <div className="space-y-5">
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-12 w-full max-w-lg" />
-          <Skeleton className="h-12 w-4/5 max-w-md" />
-          <Skeleton className="h-4 w-full max-w-lg" />
-          <Skeleton className="h-4 w-3/4 max-w-md" />
-          <div className="flex gap-3 pt-2">
-            <Skeleton className="h-11 w-36" />
-            <Skeleton className="h-11 w-32" />
-          </div>
+      <div className="mx-auto flex max-w-5xl flex-col items-center px-6 pt-16">
+        <Skeleton className="h-7 w-56" />
+        <Skeleton className="mt-6 h-12 w-full max-w-3xl" />
+        <Skeleton className="mt-3 h-12 w-3/5 max-w-xl" />
+        <Skeleton className="mt-6 h-4 w-full max-w-xl" />
+        <Skeleton className="mt-2 h-4 w-2/3 max-w-md" />
+        <div className="mt-8 flex gap-3">
+          <Skeleton className="h-11 w-44" />
+          <Skeleton className="h-11 w-28" />
         </div>
-        <div className="relative mx-auto hidden w-full max-w-xl pb-16 pt-6 lg:block">
-          <div className="ml-auto w-[88%] overflow-hidden rounded-md border border-slate-100">
-            <Skeleton className="aspect-[16/10] rounded-none" />
-            <div className="space-y-3 p-5">
-              <Skeleton className="h-5 w-2/3" />
-              <Skeleton className="h-3 w-1/3" />
-              <Skeleton className="h-2 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          </div>
-          <Skeleton className="absolute left-0 top-12 h-20 w-56" />
-          <Skeleton className="absolute bottom-0 left-4 h-16 w-52" />
-          <Skeleton className="absolute bottom-2 right-6 h-16 w-48" />
+        <div className="mt-14 hidden w-full max-w-4xl gap-4 sm:grid sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
         </div>
+        <Skeleton className="mt-4 hidden h-48 w-full max-w-4xl sm:block" />
       </div>
     </motion.div>
   );
@@ -187,63 +177,82 @@ function Bone({ className = '', brand = false }) {
   return <div className={`shimmer ${brand ? 'shimmer-brand' : ''} rounded ${className}`} aria-hidden />;
 }
 
-/** Layered wireframe of the app built from shimmering skeleton blocks: a main card with three cards overlapping it. */
-function HeroShowcase() {
-  const float = 'card absolute hidden shadow-pop sm:block';
+const BAR_HEIGHTS = [38, 62, 48, 80, 58, 92, 70, 52, 84, 66, 44, 76];
+
+/** Wireframe of the dashboard made of shimmering skeleton blocks. */
+function DashboardPreview() {
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative mx-auto w-full max-w-xl pb-24 pt-6 lg:max-w-none" role="img" aria-label="Animated preview of the DCE Lab interface loading">
-      <div className="absolute right-0 top-0 h-[88%] w-[84%] rounded-md bg-brand-50" aria-hidden />
-
-      <motion.div variants={fadeUp} className="card relative ml-auto w-full overflow-hidden shadow-pop sm:w-[88%]" aria-hidden>
-        <Bone className="aspect-[16/10] w-full rounded-none" />
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 space-y-2">
-              <Bone className="h-5 w-2/5" />
-              <Bone className="h-3 w-3/5" />
+    <motion.div
+      variants={fadeUp}
+      className="card relative mx-auto mt-14 w-full max-w-6xl overflow-hidden text-left shadow-pop"
+      role="img"
+      aria-label="Animated wireframe of the DCE Lab dashboard"
+    >
+      <div className="flex" aria-hidden>
+        <aside className="hidden w-52 shrink-0 space-y-3 border-r border-slate-100 p-4 md:block">
+          <Bone className="mb-5 h-8 w-28" />
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Bone brand={i === 0} className="h-5 w-5" />
+              <Bone brand={i === 0} className={`h-3 ${['w-24', 'w-20', 'w-28', 'w-16', 'w-24', 'w-20', 'w-16'][i]}`} />
             </div>
-            <Bone className="h-6 w-14" />
-          </div>
-          <div className="mt-5 space-y-2">
-            <div className="flex justify-between">
-              <Bone className="h-4 w-1/3" />
-              <Bone className="h-3 w-16" />
+          ))}
+        </aside>
+
+        <div className="min-w-0 flex-1 space-y-5 p-4 sm:p-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Bone className="h-5 w-40" />
+              <Bone className="h-3 w-64 max-w-full" />
             </div>
-            <Bone className="h-2 w-full" />
+            <Bone className="h-9 w-9 rounded-full" />
           </div>
-          <Bone brand className="mt-5 h-10 w-full" />
-        </div>
-      </motion.div>
 
-      <motion.div variants={fadeUp} className={`${float} -left-4 top-14 w-60 p-3 xl:-left-10`} aria-hidden>
-        <div className="flex items-center gap-3">
-          <Bone className="h-12 w-16 shrink-0" />
-          <div className="flex-1 space-y-2">
-            <Bone className="h-4 w-4/5" />
-            <Bone className="h-3 w-3/5" />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-md border border-slate-100 p-3">
+                <Bone brand={i === 0} className="h-10 w-10 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Bone className="h-5 w-1/2" />
+                  <Bone className="h-3 w-4/5" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="rounded-md border border-slate-100 p-4 lg:col-span-2">
+              <Bone className="mb-4 h-4 w-44" />
+              <div className="flex h-44 items-end gap-2 border-b border-slate-100 pb-0.5">
+                {BAR_HEIGHTS.map((h, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: 1 }}
+                    transition={{ delay: 0.5 + i * 0.05, duration: 0.5, ease: 'easeOut' }}
+                    style={{ height: `${h}%`, originY: 1 }}
+                    className={`shimmer flex-1 rounded-t-sm ${i === 5 ? 'shimmer-brand' : ''}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-md border border-slate-100 p-4">
+              <Bone className="mb-1 h-4 w-32" />
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Bone className="h-10 w-12 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Bone className="h-3.5 w-4/5" />
+                    <Bone className="h-3 w-1/2" />
+                  </div>
+                  <Bone className="h-5 w-12" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
-          <Bone className="h-3 w-20" />
-          <Bone className="h-5 w-16" />
-        </div>
-      </motion.div>
-
-      <motion.div variants={fadeUp} className={`${float} -bottom-2 left-0 flex w-56 items-center gap-3 p-3 xl:-left-6`} aria-hidden>
-        <Bone className="h-11 w-11 shrink-0" />
-        <div className="flex-1 space-y-2">
-          <Bone className="h-4 w-4/5" />
-          <Bone className="h-3 w-1/2" />
-        </div>
-      </motion.div>
-
-      <motion.div variants={fadeUp} className={`${float} -bottom-6 right-2 flex w-60 items-start gap-3 p-3`} aria-hidden>
-        <Bone className="h-9 w-9 shrink-0 rounded-full" />
-        <div className="flex-1 space-y-2">
-          <Bone className="h-4 w-3/5" />
-          <Bone className="h-3 w-full" />
-        </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
@@ -251,50 +260,47 @@ function HeroShowcase() {
 function Hero() {
   const { user } = useAuth();
   return (
-    <section id="top" className="flex min-h-screen items-center overflow-x-clip bg-white pt-16">
-      <div className="mx-auto grid w-full max-w-7xl items-center gap-12 px-6 py-16 lg:grid-cols-2">
-        <motion.div variants={staggerContainer} initial="hidden" animate="show">
-          <motion.p variants={fadeUp} className="inline-flex items-center gap-2 rounded border border-brand-200 bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700">
-            <Bell size={14} /> Laboratory and equipment management
-          </motion.p>
-          <motion.h1 variants={fadeUp} className="mt-5 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-            Smarter laboratory management for DCE.
-          </motion.h1>
-          <motion.p variants={fadeUp} className="mt-5 max-w-xl text-lg text-slate-600">
-            Browse equipment with photos, borrow and return with a clear approval trail, scan QR labels and keep every repair on record, all in one place.
-          </motion.p>
-          <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
-            {user ? (
-              <Link to="/dashboard" className="inline-flex items-center gap-2 rounded bg-brand-600 px-5 py-3 font-medium text-white hover:bg-brand-700">
-                Open dashboard <ArrowRight size={18} />
+    <section id="top" className="flex min-h-screen justify-center overflow-x-clip bg-white pt-16">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="mx-auto w-full max-w-7xl px-6 pb-20 pt-14 text-center sm:pt-20">
+        <motion.p variants={fadeUp} className="inline-flex items-center gap-2 rounded border border-brand-200 bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700">
+          <Bell size={14} /> Laboratory and equipment management
+        </motion.p>
+        <motion.h1 variants={fadeUp} className="mx-auto mt-6 max-w-4xl text-4xl font-bold leading-tight sm:text-5xl lg:text-7xl">
+          Smarter laboratory management for DCE.
+        </motion.h1>
+        <motion.p variants={fadeUp} className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
+          Browse equipment with photos, borrow and return with a clear approval trail, scan QR labels and keep every repair on record, all in one place.
+        </motion.p>
+        <motion.div variants={fadeUp} className="mt-8 flex flex-wrap justify-center gap-3">
+          {user ? (
+            <Link to="/dashboard" className="inline-flex items-center gap-2 rounded bg-brand-600 px-6 py-3 font-medium text-white hover:bg-brand-700">
+              Open dashboard <ArrowRight size={18} />
+            </Link>
+          ) : (
+            <>
+              <Link to="/register" className="inline-flex items-center gap-2 rounded bg-brand-600 px-6 py-3 font-medium text-white hover:bg-brand-700">
+                Create an account <ArrowRight size={18} />
               </Link>
-            ) : (
-              <>
-                <Link to="/register" className="inline-flex items-center gap-2 rounded bg-brand-600 px-5 py-3 font-medium text-white hover:bg-brand-700">
-                  Create an account <ArrowRight size={18} />
-                </Link>
-                <Link to="/login" className="inline-flex items-center rounded border border-slate-300 bg-white px-5 py-3 font-medium text-slate-700 hover:bg-slate-50">
-                  Sign in
-                </Link>
-              </>
-            )}
-          </motion.div>
-          <motion.dl variants={fadeUp} className="mt-12 grid max-w-md grid-cols-3 gap-6 border-t border-slate-200 pt-6">
-            {[
-              ['4', 'user roles'],
-              ['7', 'equipment categories'],
-              ['QR', 'item labels'],
-            ].map(([value, label]) => (
-              <div key={label}>
-                <dt className="text-2xl font-bold text-slate-900">{value}</dt>
-                <dd className="text-sm text-slate-500">{label}</dd>
-              </div>
-            ))}
-          </motion.dl>
+              <Link to="/login" className="inline-flex items-center rounded border border-slate-300 bg-white px-6 py-3 font-medium text-slate-700 hover:bg-slate-50">
+                Sign in
+              </Link>
+            </>
+          )}
         </motion.div>
+        <motion.ul variants={fadeUp} className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-slate-500">
+          <li>
+            <span className="font-semibold text-slate-900">4</span> user roles
+          </li>
+          <li>
+            <span className="font-semibold text-slate-900">7</span> equipment categories
+          </li>
+          <li>
+            <span className="font-semibold text-slate-900">QR</span> item labels
+          </li>
+        </motion.ul>
 
-        <HeroShowcase />
-      </div>
+        <DashboardPreview />
+      </motion.div>
     </section>
   );
 }
