@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from 'framer-motion';
 import {
   ArrowRight,
   Bell,
   CalendarDays,
   ChartNoAxesCombined,
   ClipboardList,
+  Cpu,
+  FlaskConical,
   GraduationCap,
+  Microscope,
   Package,
   PackageCheck,
   QrCode,
@@ -60,9 +63,10 @@ const TEAM = [
 /* ---------- loading skeleton (mirrors the hero layout) ---------- */
 
 function LandingSkeleton() {
+  const D = (props) => <Bone tone="dark" {...props} />;
   return (
-    <motion.div key="skeleton" exit={{ opacity: 0, transition: { duration: 0.3 } }} className="fixed inset-0 z-50 overflow-hidden bg-white" aria-busy="true" aria-label="Loading DCE Lab">
-      <div className="flex h-16 items-center justify-between border-b border-slate-100 px-6">
+    <motion.div key="skeleton" exit={{ opacity: 0, transition: { duration: 0.35 } }} className="fixed inset-0 z-50 overflow-hidden bg-slate-950" aria-busy="true" aria-label="Loading DCE Lab">
+      <div className="flex h-16 items-center justify-between border-b border-slate-100 bg-white px-6">
         <Skeleton className="h-9 w-28" />
         <div className="hidden gap-6 md:flex">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -75,21 +79,21 @@ function LandingSkeleton() {
         </div>
       </div>
       <div className="mx-auto flex max-w-5xl flex-col items-center px-6 pt-16">
-        <Skeleton className="h-7 w-56" />
-        <Skeleton className="mt-6 h-12 w-full max-w-3xl" />
-        <Skeleton className="mt-3 h-12 w-3/5 max-w-xl" />
-        <Skeleton className="mt-6 h-4 w-full max-w-xl" />
-        <Skeleton className="mt-2 h-4 w-2/3 max-w-md" />
+        <D className="h-7 w-56" />
+        <D className="mt-6 h-12 w-full max-w-3xl" />
+        <D className="mt-3 h-12 w-3/5 max-w-xl" />
+        <D className="mt-6 h-4 w-full max-w-xl" />
+        <D className="mt-2 h-4 w-2/3 max-w-md" />
         <div className="mt-8 flex gap-3">
-          <Skeleton className="h-11 w-44" />
-          <Skeleton className="h-11 w-28" />
+          <D brand className="h-11 w-44" />
+          <D className="h-11 w-28" />
         </div>
         <div className="mt-14 hidden w-full max-w-4xl gap-4 sm:grid sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
+            <D key={i} className="h-24" />
           ))}
         </div>
-        <Skeleton className="mt-4 hidden h-48 w-full max-w-4xl sm:block" />
+        <D className="mt-4 hidden h-48 w-full max-w-4xl sm:block" />
       </div>
     </motion.div>
   );
@@ -132,21 +136,25 @@ function Header() {
   const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Transparent glass over the dark hero, solid white once the page has scrolled.
+  const shell = scrolled ? 'border-slate-200 bg-white/95 shadow-card backdrop-blur' : 'border-white/10 bg-slate-950/30 backdrop-blur-md';
+  const link = scrolled ? 'text-slate-600 hover:text-brand-700' : 'text-white/75 hover:text-white';
+
   return (
-    <header className={`fixed inset-x-0 top-0 z-40 border-b bg-white/95 backdrop-blur transition-shadow ${scrolled ? 'border-slate-200 shadow-card' : 'border-transparent'}`}>
+    <header className={`fixed inset-x-0 top-0 z-40 border-b transition-colors duration-300 ${shell}`}>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <a href="#top" aria-label="DCE Lab home">
-          <img src={logo} alt="DCE Lab" className="h-9 w-auto" />
+        <a href="#top" aria-label="DCE Lab home" className={`rounded transition-colors duration-300 ${scrolled ? '' : 'bg-white px-2 py-1'}`}>
+          <img src={logo} alt="DCE Lab" className="h-8 w-auto" />
         </a>
         <nav className="hidden items-center gap-8 md:flex" aria-label="Page sections">
           {NAV.map((n) => (
-            <a key={n.href} href={n.href} className="text-sm font-medium text-slate-600 transition-colors hover:text-brand-700">
+            <a key={n.href} href={n.href} className={`text-sm font-medium transition-colors ${link}`}>
               {n.label}
             </a>
           ))}
@@ -158,7 +166,7 @@ function Header() {
             </Link>
           ) : (
             <>
-              <Link to="/login" className="rounded px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+              <Link to="/login" className={`rounded px-3.5 py-2 text-sm font-medium transition-colors ${scrolled ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'}`}>
                 Sign in
               </Link>
               <Link to="/register" className="hidden rounded bg-brand-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-brand-700 sm:inline-flex">
@@ -172,83 +180,97 @@ function Header() {
   );
 }
 
-/** A placeholder block that shimmers. */
-function Bone({ className = '', brand = false }) {
-  return <div className={`shimmer ${brand ? 'shimmer-brand' : ''} rounded ${className}`} aria-hidden />;
+/** A placeholder block that shimmers (tone="dark" for dark surfaces). */
+function Bone({ className = '', brand = false, tone = 'light' }) {
+  const look = tone === 'dark' ? `shimmer-dark ${brand ? 'shimmer-dark-brand' : ''}` : `shimmer ${brand ? 'shimmer-brand' : ''}`;
+  return <div className={`${look} rounded ${className}`} aria-hidden />;
 }
 
 const BAR_HEIGHTS = [38, 62, 48, 80, 58, 92, 70, 52, 84, 66, 44, 76];
 
-/** Wireframe of the dashboard made of shimmering skeleton blocks. */
+/** Glass wireframe of the dashboard made of shimmering skeleton blocks. */
 function DashboardPreview() {
+  const reduce = useReducedMotion();
+  const B = (props) => <Bone tone="dark" {...props} />;
   return (
-    <motion.div
-      variants={fadeUp}
-      className="card relative mx-auto mt-14 w-full max-w-6xl overflow-hidden text-left shadow-pop"
-      role="img"
-      aria-label="Animated wireframe of the DCE Lab dashboard"
-    >
-      <div className="flex" aria-hidden>
-        <aside className="hidden w-52 shrink-0 space-y-3 border-r border-slate-100 p-4 md:block">
-          <Bone className="mb-5 h-8 w-28" />
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <Bone brand={i === 0} className="h-5 w-5" />
-              <Bone brand={i === 0} className={`h-3 ${['w-24', 'w-20', 'w-28', 'w-16', 'w-24', 'w-20', 'w-16'][i]}`} />
-            </div>
-          ))}
-        </aside>
+    <motion.div variants={fadeUp} className="relative mx-auto mt-16 w-full max-w-6xl" role="img" aria-label="Animated wireframe of the DCE Lab dashboard">
+      {/* glow under the panel */}
+      <div className="absolute -inset-x-6 -top-8 h-44 rounded-full bg-brand-600/30 blur-3xl" aria-hidden />
 
-        <div className="min-w-0 flex-1 space-y-5 p-4 sm:p-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <Bone className="h-5 w-40" />
-              <Bone className="h-3 w-64 max-w-full" />
-            </div>
-            <Bone className="h-9 w-9 rounded-full" />
-          </div>
+      <div className="relative overflow-hidden rounded-md border border-white/10 bg-slate-900/70 text-left shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)] backdrop-blur-md">
+        <div className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" aria-hidden />
+        {!reduce && (
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 z-10 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
+            initial={{ left: '-40%' }}
+            animate={{ left: '140%' }}
+            transition={{ duration: 2.4, ease: 'easeInOut', repeat: Infinity, repeatDelay: 5 }}
+          />
+        )}
 
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-md border border-slate-100 p-3">
-                <Bone brand={i === 0} className="h-10 w-10 shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <Bone className="h-5 w-1/2" />
-                  <Bone className="h-3 w-4/5" />
-                </div>
+        <div className="flex" aria-hidden>
+          <aside className="hidden w-52 shrink-0 space-y-3 border-r border-white/10 p-4 md:block">
+            <B className="mb-5 h-8 w-28" />
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <B brand={i === 0} className="h-5 w-5" />
+                <B brand={i === 0} className={`h-3 ${['w-24', 'w-20', 'w-28', 'w-16', 'w-24', 'w-20', 'w-16'][i]}`} />
               </div>
             ))}
-          </div>
+          </aside>
 
-          <div className="grid gap-4 lg:grid-cols-3">
-            <div className="rounded-md border border-slate-100 p-4 lg:col-span-2">
-              <Bone className="mb-4 h-4 w-44" />
-              <div className="flex h-44 items-end gap-2 border-b border-slate-100 pb-0.5">
-                {BAR_HEIGHTS.map((h, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: 1 }}
-                    transition={{ delay: 0.5 + i * 0.05, duration: 0.5, ease: 'easeOut' }}
-                    style={{ height: `${h}%`, originY: 1 }}
-                    className={`shimmer flex-1 rounded-t-sm ${i === 5 ? 'shimmer-brand' : ''}`}
-                  />
-                ))}
+          <div className="min-w-0 flex-1 space-y-5 p-4 sm:p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <B className="h-5 w-40" />
+                <B className="h-3 w-64 max-w-full" />
               </div>
+              <B className="h-9 w-9 rounded-full" />
             </div>
 
-            <div className="space-y-3 rounded-md border border-slate-100 p-4">
-              <Bone className="mb-1 h-4 w-32" />
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Bone className="h-10 w-12 shrink-0" />
+                <div key={i} className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <B brand={i === 0} className="h-10 w-10 shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <Bone className="h-3.5 w-4/5" />
-                    <Bone className="h-3 w-1/2" />
+                    <B className="h-5 w-1/2" />
+                    <B className="h-3 w-4/5" />
                   </div>
-                  <Bone className="h-5 w-12" />
                 </div>
               ))}
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="rounded-md border border-white/10 bg-white/[0.03] p-4 lg:col-span-2">
+                <B className="mb-4 h-4 w-44" />
+                <div className="flex h-44 items-end gap-2 border-b border-white/10 pb-0.5">
+                  {BAR_HEIGHTS.map((h, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scaleY: 0 }}
+                      animate={{ scaleY: 1 }}
+                      transition={{ delay: 0.7 + i * 0.05, duration: 0.5, ease: 'easeOut' }}
+                      style={{ height: `${h}%`, originY: 1 }}
+                      className={`shimmer-dark flex-1 rounded-t-sm ${i === 5 ? 'shimmer-dark-brand' : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-md border border-white/10 bg-white/[0.03] p-4">
+                <B className="mb-1 h-4 w-32" />
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <B className="h-10 w-12 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <B className="h-3.5 w-4/5" />
+                      <B className="h-3 w-1/2" />
+                    </div>
+                    <B className="h-5 w-12" />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -257,51 +279,157 @@ function DashboardPreview() {
   );
 }
 
+/* ---------- hero background ---------- */
+
+const FLOATERS = [
+  { Icon: FlaskConical, className: 'left-[5%] top-[20%]', delay: 0, duration: 7 },
+  { Icon: Cpu, className: 'right-[6%] top-[16%]', delay: 1.2, duration: 8 },
+  { Icon: QrCode, className: 'left-[9%] top-[58%]', delay: 0.6, duration: 9 },
+  { Icon: Package, className: 'right-[8%] top-[52%]', delay: 1.8, duration: 7.5 },
+  { Icon: Microscope, className: 'left-[3%] top-[40%]', delay: 2.4, duration: 8.5 },
+  { Icon: Wrench, className: 'right-[3%] top-[34%]', delay: 0.3, duration: 9.5 },
+];
+
+const AURORAS = [
+  { className: '-left-32 -top-24 h-[34rem] w-[34rem] bg-brand-600/45', x: [0, 90, 20], y: [0, 60, 120], scale: [1, 1.2, 0.95], duration: 19 },
+  { className: '-right-40 top-10 h-[38rem] w-[38rem] bg-rose-500/30', x: [0, -80, -20], y: [0, 90, 20], scale: [1.1, 0.9, 1.15], duration: 23 },
+  { className: 'left-1/3 -bottom-48 h-[32rem] w-[32rem] bg-red-900/60', x: [0, 70, -60], y: [0, -50, 10], scale: [1, 1.25, 1], duration: 27 },
+  { className: 'left-[55%] top-[8%] h-72 w-72 bg-amber-500/15', x: [0, -60, 40], y: [0, 40, -20], scale: [0.9, 1.15, 1], duration: 21 },
+];
+
+/** Animated stage behind the hero: aurora glows, a drifting grid, floating lab icons and a pointer spotlight. */
+function HeroBackground({ sectionRef }) {
+  const reduce = useReducedMotion();
+  const mx = useSpring(useMotionValue(0), { stiffness: 90, damping: 24 });
+  const my = useSpring(useMotionValue(0), { stiffness: 90, damping: 24 });
+  const spotlight = useMotionTemplate`radial-gradient(520px circle at ${mx}px ${my}px, rgba(225, 56, 74, 0.2), transparent 65%)`;
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return undefined;
+    const rect = el.getBoundingClientRect();
+    mx.set(rect.width / 2);
+    my.set(rect.height * 0.3);
+    if (reduce) return undefined;
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect();
+      mx.set(e.clientX - r.left);
+      my.set(e.clientY - r.top);
+    };
+    el.addEventListener('pointermove', onMove);
+    return () => el.removeEventListener('pointermove', onMove);
+  }, [sectionRef, reduce, mx, my]);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
+      {AURORAS.map((a) => (
+        <motion.div
+          key={a.className}
+          className={`absolute rounded-full mix-blend-screen blur-3xl will-change-transform ${a.className}`}
+          animate={reduce ? undefined : { x: a.x, y: a.y, scale: a.scale }}
+          transition={{ duration: a.duration, ease: 'easeInOut', repeat: Infinity, repeatType: 'mirror' }}
+        />
+      ))}
+
+      <div className="hero-grid absolute inset-0" />
+      <motion.div className="absolute inset-0" style={{ background: spotlight }} />
+
+      {FLOATERS.map(({ Icon, className, delay, duration }) => (
+        <motion.div
+          key={className}
+          className={`absolute hidden h-14 w-14 items-center justify-center rounded-md border border-white/10 bg-white/[0.05] text-white/60 backdrop-blur-sm xl:flex ${className}`}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={reduce ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1, y: [0, -16, 0], rotate: [-4, 5, -4] }}
+          transition={{
+            opacity: { delay: 1 + delay * 0.3, duration: 0.8 },
+            scale: { delay: 1 + delay * 0.3, duration: 0.8 },
+            y: { delay, duration, ease: 'easeInOut', repeat: Infinity },
+            rotate: { delay, duration: duration * 1.2, ease: 'easeInOut', repeat: Infinity },
+          }}
+        >
+          <Icon size={24} />
+        </motion.div>
+      ))}
+
+      {/* vignette keeps the edges calm so the text stays readable */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(2,6,23,0.65)_100%)]" />
+    </div>
+  );
+}
+
 function Hero() {
   const { user } = useAuth();
+  const sectionRef = useRef(null);
   return (
-    <section id="top" className="flex min-h-screen justify-center overflow-x-clip bg-white pt-16">
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="mx-auto w-full max-w-7xl px-6 pb-20 pt-14 text-center sm:pt-20">
-        <motion.p variants={fadeUp} className="inline-flex items-center gap-2 rounded border border-brand-200 bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700">
-          <Bell size={14} /> Laboratory and equipment management
+    <section ref={sectionRef} id="top" className="relative isolate flex min-h-screen justify-center overflow-hidden bg-slate-950 pt-16 text-white">
+      <HeroBackground sectionRef={sectionRef} />
+
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative mx-auto w-full max-w-7xl px-6 pb-24 pt-14 text-center sm:pt-20">
+        <motion.p variants={fadeUp} className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75 motion-safe:animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
+          </span>
+          Laboratory and equipment management
         </motion.p>
-        <motion.h1 variants={fadeUp} className="mx-auto mt-6 max-w-4xl text-4xl font-bold leading-tight sm:text-5xl lg:text-7xl">
-          Smarter laboratory management for DCE.
+
+        <motion.h1 variants={fadeUp} className="mx-auto mt-7 max-w-4xl text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-7xl">
+          Smarter laboratory management for <span className="text-shimmer">DCE.</span>
         </motion.h1>
-        <motion.p variants={fadeUp} className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
+
+        <motion.p variants={fadeUp} className="mx-auto mt-6 max-w-2xl text-lg text-slate-300">
           Browse equipment with photos, borrow and return with a clear approval trail, scan QR labels and keep every repair on record, all in one place.
         </motion.p>
-        <motion.div variants={fadeUp} className="mt-8 flex flex-wrap justify-center gap-3">
+
+        <motion.div variants={fadeUp} className="mt-9 flex flex-wrap justify-center gap-3">
           {user ? (
-            <Link to="/dashboard" className="inline-flex items-center gap-2 rounded bg-brand-600 px-6 py-3 font-medium text-white hover:bg-brand-700">
+            <HeroLink to="/dashboard" primary>
               Open dashboard <ArrowRight size={18} />
-            </Link>
+            </HeroLink>
           ) : (
             <>
-              <Link to="/register" className="inline-flex items-center gap-2 rounded bg-brand-600 px-6 py-3 font-medium text-white hover:bg-brand-700">
+              <HeroLink to="/register" primary>
                 Create an account <ArrowRight size={18} />
-              </Link>
-              <Link to="/login" className="inline-flex items-center rounded border border-slate-300 bg-white px-6 py-3 font-medium text-slate-700 hover:bg-slate-50">
-                Sign in
-              </Link>
+              </HeroLink>
+              <HeroLink to="/login">Sign in</HeroLink>
             </>
           )}
         </motion.div>
-        <motion.ul variants={fadeUp} className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-slate-500">
+
+        <motion.ul variants={fadeUp} className="mt-9 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-slate-400">
           <li>
-            <span className="font-semibold text-slate-900">4</span> user roles
+            <span className="font-semibold text-white">4</span> user roles
           </li>
           <li>
-            <span className="font-semibold text-slate-900">7</span> equipment categories
+            <span className="font-semibold text-white">7</span> equipment categories
           </li>
           <li>
-            <span className="font-semibold text-slate-900">QR</span> item labels
+            <span className="font-semibold text-white">QR</span> item labels
           </li>
         </motion.ul>
 
         <DashboardPreview />
       </motion.div>
     </section>
+  );
+}
+
+/** Hero call-to-action: the primary one glows and sweeps a highlight on hover. */
+function HeroLink({ to, primary = false, children }) {
+  return (
+    <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} className="inline-flex">
+      <Link
+        to={to}
+        className={`group relative inline-flex items-center gap-2 overflow-hidden rounded-md px-6 py-3 font-medium transition-colors ${
+          primary
+            ? 'bg-brand-600 text-white shadow-[0_0_45px_-8px_rgba(225,56,74,0.9)] hover:bg-brand-500'
+            : 'border border-white/20 bg-white/5 text-white backdrop-blur hover:bg-white/10'
+        }`}
+      >
+        {primary && <span className="absolute inset-0 -translate-x-full skew-x-12 bg-white/25 transition-transform duration-700 group-hover:translate-x-full" aria-hidden />}
+        <span className="relative inline-flex items-center gap-2">{children}</span>
+      </Link>
+    </motion.div>
   );
 }
 
