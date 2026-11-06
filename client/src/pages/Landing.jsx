@@ -21,6 +21,7 @@ import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Skeleton } from '../components/ui.jsx';
 import { EquipmentImage } from '../components/EquipmentImage.jsx';
+import { StatusBadge } from '../components/StatusBadge.jsx';
 import { CATEGORY_IMAGES } from '../utils/format.js';
 import { fadeUp, staggerContainer } from '../animations/variants.js';
 
@@ -59,13 +60,6 @@ const TEAM = [
   { name: 'Bhone Pyae Min', department: 'Computer Engineering', initials: 'BP' },
 ];
 
-const PREVIEW_ITEMS = [
-  { name: 'Arduino Uno R3', category: 'Arduino and ESP32', stat: '23 / 25 available' },
-  { name: 'Canon EOS R50', category: 'Cameras and Photography', stat: '3 / 4 available' },
-  { name: 'Meta Quest 3', category: 'VR and AR Devices', stat: '5 / 5 available' },
-  { name: 'Cisco Catalyst 2960', category: 'Networking Equipment', stat: '6 / 6 available' },
-];
-
 /* ---------- loading skeleton (mirrors the hero layout) ---------- */
 
 function LandingSkeleton() {
@@ -95,16 +89,19 @@ function LandingSkeleton() {
             <Skeleton className="h-11 w-32" />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="overflow-hidden rounded-md border border-slate-100">
-              <Skeleton className="aspect-[4/3] rounded-none" />
-              <div className="space-y-2 p-3">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
+        <div className="relative mx-auto hidden w-full max-w-xl pb-16 pt-6 lg:block">
+          <div className="ml-auto w-[88%] overflow-hidden rounded-md border border-slate-100">
+            <Skeleton className="aspect-[16/10] rounded-none" />
+            <div className="space-y-3 p-5">
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-2 w-full" />
+              <Skeleton className="h-10 w-full" />
             </div>
-          ))}
+          </div>
+          <Skeleton className="absolute left-0 top-12 h-20 w-56" />
+          <Skeleton className="absolute bottom-0 left-4 h-16 w-52" />
+          <Skeleton className="absolute bottom-2 right-6 h-16 w-48" />
         </div>
       </div>
     </motion.div>
@@ -204,10 +201,82 @@ function Header() {
   );
 }
 
+/** Layered product preview: an equipment card with the borrow, QR and reminder cards overlapping it. */
+function HeroShowcase() {
+  const float = 'card absolute hidden shadow-pop sm:block';
+  return (
+    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative mx-auto w-full max-w-xl pb-24 pt-6 lg:max-w-none" aria-label="Product preview">
+      <div className="absolute right-0 top-0 h-[88%] w-[84%] rounded-md bg-brand-50" aria-hidden />
+
+      <motion.article variants={fadeUp} className="card relative ml-auto w-full overflow-hidden shadow-pop sm:w-[88%]">
+        <EquipmentImage item={{ category: 'Arduino and ESP32' }} alt="Arduino Uno R3" className="aspect-[16/10] w-full" />
+        <div className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold">Arduino Uno R3</h3>
+              <p className="text-xs text-slate-500">EQ-MCU-0001 - Arduino and ESP32</p>
+            </div>
+            <StatusBadge status="good" />
+          </div>
+          <div className="mt-4">
+            <div className="flex items-baseline justify-between text-sm">
+              <span>
+                <span className="text-lg font-bold">23</span>
+                <span className="text-slate-400"> / 25 available</span>
+              </span>
+              <span className="text-xs text-slate-400">Cabinet B1</span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-sm bg-slate-100">
+              <motion.div initial={{ width: 0 }} animate={{ width: '92%' }} transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }} className="h-full bg-emerald-500" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-2 rounded bg-brand-600 py-2.5 text-sm font-medium text-white" aria-hidden>
+            <ClipboardList size={16} /> Borrow
+          </div>
+        </div>
+      </motion.article>
+
+      <motion.div variants={fadeUp} whileHover={{ y: -3 }} className={`${float} -left-4 top-14 w-60 p-3 xl:-left-10`}>
+        <div className="flex items-center gap-3">
+          <EquipmentImage item={{ category: 'Cameras and Photography' }} alt="" className="h-12 w-16 shrink-0 rounded" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">Canon EOS R50</p>
+            <p className="text-xs text-slate-500">Pick-up tomorrow</p>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
+          <span className="text-xs text-slate-500">Borrow request</span>
+          <StatusBadge status="approved" />
+        </div>
+      </motion.div>
+
+      <motion.div variants={fadeUp} whileHover={{ y: -3 }} className={`${float} -bottom-2 left-0 flex w-56 items-center gap-3 p-3 xl:-left-6`}>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-slate-900 text-white">
+          <QrCode size={22} />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">Scan to check out</p>
+          <p className="text-xs text-slate-500">EQ-CAM-0001</p>
+        </div>
+      </motion.div>
+
+      <motion.div variants={fadeUp} whileHover={{ y: -3 }} className={`${float} -bottom-6 right-2 flex w-60 items-start gap-3 p-3`}>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-amber-50 text-amber-600">
+          <Bell size={18} />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">Return reminder</p>
+          <p className="text-xs text-slate-500">Multimeter is due back in 2 days.</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function Hero() {
   const { user } = useAuth();
   return (
-    <section id="top" className="flex min-h-screen items-center bg-white pt-16">
+    <section id="top" className="flex min-h-screen items-center overflow-x-clip bg-white pt-16">
       <div className="mx-auto grid w-full max-w-7xl items-center gap-12 px-6 py-16 lg:grid-cols-2">
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
           <motion.p variants={fadeUp} className="inline-flex items-center gap-2 rounded border border-brand-200 bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700">
@@ -249,17 +318,7 @@ function Hero() {
           </motion.dl>
         </motion.div>
 
-        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-2 gap-4" aria-label="Equipment preview">
-          {PREVIEW_ITEMS.map((item) => (
-            <motion.div key={item.name} variants={fadeUp} whileHover={{ y: -3 }} className="card overflow-hidden">
-              <EquipmentImage item={item} className="aspect-[4/3] w-full" />
-              <div className="p-3">
-                <p className="truncate text-sm font-semibold">{item.name}</p>
-                <p className="text-xs text-slate-500">{item.stat}</p>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+        <HeroShowcase />
       </div>
     </section>
   );
