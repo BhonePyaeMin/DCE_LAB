@@ -20,9 +20,6 @@ import {
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Skeleton } from '../components/ui.jsx';
-import { EquipmentImage } from '../components/EquipmentImage.jsx';
-import { StatusBadge } from '../components/StatusBadge.jsx';
-import { CATEGORY_IMAGES } from '../utils/format.js';
 import { fadeUp, staggerContainer } from '../animations/variants.js';
 
 const NAV = [
@@ -108,30 +105,14 @@ function LandingSkeleton() {
   );
 }
 
-/** Resolves once the hero illustrations are cached (or after a safety timeout), but never before `minMs`. */
-function useLandingReady(minMs = 900, maxMs = 3000) {
+/** Keeps the loading skeleton on screen briefly so the page does not flash in (shorter for reduced motion). */
+function useLandingReady(minMs = 1100) {
   const reduce = useReducedMotion();
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    let active = true;
-    const images = Object.values(CATEGORY_IMAGES).slice(0, 5);
-    const loaded = Promise.all(
-      images.map(
-        (src) =>
-          new Promise((resolve) => {
-            const img = new Image();
-            img.onload = img.onerror = resolve;
-            img.src = src;
-          })
-      )
-    );
-    const minimum = new Promise((resolve) => setTimeout(resolve, reduce ? 200 : minMs));
-    const cap = new Promise((resolve) => setTimeout(resolve, maxMs));
-    Promise.race([Promise.all([loaded, minimum]), cap]).then(() => active && setReady(true));
-    return () => {
-      active = false;
-    };
-  }, [minMs, maxMs, reduce]);
+    const timer = setTimeout(() => setReady(true), reduce ? 200 : minMs);
+    return () => clearTimeout(timer);
+  }, [minMs, reduce]);
   return ready;
 }
 
@@ -201,72 +182,66 @@ function Header() {
   );
 }
 
-/** Layered product preview: an equipment card with the borrow, QR and reminder cards overlapping it. */
+/** A placeholder block that shimmers. */
+function Bone({ className = '', brand = false }) {
+  return <div className={`shimmer ${brand ? 'shimmer-brand' : ''} rounded ${className}`} aria-hidden />;
+}
+
+/** Layered wireframe of the app built from shimmering skeleton blocks: a main card with three cards overlapping it. */
 function HeroShowcase() {
   const float = 'card absolute hidden shadow-pop sm:block';
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative mx-auto w-full max-w-xl pb-24 pt-6 lg:max-w-none" aria-label="Product preview">
+    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative mx-auto w-full max-w-xl pb-24 pt-6 lg:max-w-none" role="img" aria-label="Animated preview of the DCE Lab interface loading">
       <div className="absolute right-0 top-0 h-[88%] w-[84%] rounded-md bg-brand-50" aria-hidden />
 
-      <motion.article variants={fadeUp} className="card relative ml-auto w-full overflow-hidden shadow-pop sm:w-[88%]">
-        <EquipmentImage item={{ category: 'Arduino and ESP32' }} alt="Arduino Uno R3" className="aspect-[16/10] w-full" />
+      <motion.div variants={fadeUp} className="card relative ml-auto w-full overflow-hidden shadow-pop sm:w-[88%]" aria-hidden>
+        <Bone className="aspect-[16/10] w-full rounded-none" />
         <div className="p-5">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold">Arduino Uno R3</h3>
-              <p className="text-xs text-slate-500">EQ-MCU-0001 - Arduino and ESP32</p>
+            <div className="flex-1 space-y-2">
+              <Bone className="h-5 w-2/5" />
+              <Bone className="h-3 w-3/5" />
             </div>
-            <StatusBadge status="good" />
+            <Bone className="h-6 w-14" />
           </div>
-          <div className="mt-4">
-            <div className="flex items-baseline justify-between text-sm">
-              <span>
-                <span className="text-lg font-bold">23</span>
-                <span className="text-slate-400"> / 25 available</span>
-              </span>
-              <span className="text-xs text-slate-400">Cabinet B1</span>
+          <div className="mt-5 space-y-2">
+            <div className="flex justify-between">
+              <Bone className="h-4 w-1/3" />
+              <Bone className="h-3 w-16" />
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-sm bg-slate-100">
-              <motion.div initial={{ width: 0 }} animate={{ width: '92%' }} transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }} className="h-full bg-emerald-500" />
-            </div>
+            <Bone className="h-2 w-full" />
           </div>
-          <div className="mt-4 flex items-center justify-center gap-2 rounded bg-brand-600 py-2.5 text-sm font-medium text-white" aria-hidden>
-            <ClipboardList size={16} /> Borrow
-          </div>
+          <Bone brand className="mt-5 h-10 w-full" />
         </div>
-      </motion.article>
+      </motion.div>
 
-      <motion.div variants={fadeUp} whileHover={{ y: -3 }} className={`${float} -left-4 top-14 w-60 p-3 xl:-left-10`}>
+      <motion.div variants={fadeUp} className={`${float} -left-4 top-14 w-60 p-3 xl:-left-10`} aria-hidden>
         <div className="flex items-center gap-3">
-          <EquipmentImage item={{ category: 'Cameras and Photography' }} alt="" className="h-12 w-16 shrink-0 rounded" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">Canon EOS R50</p>
-            <p className="text-xs text-slate-500">Pick-up tomorrow</p>
+          <Bone className="h-12 w-16 shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Bone className="h-4 w-4/5" />
+            <Bone className="h-3 w-3/5" />
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
-          <span className="text-xs text-slate-500">Borrow request</span>
-          <StatusBadge status="approved" />
+        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+          <Bone className="h-3 w-20" />
+          <Bone className="h-5 w-16" />
         </div>
       </motion.div>
 
-      <motion.div variants={fadeUp} whileHover={{ y: -3 }} className={`${float} -bottom-2 left-0 flex w-56 items-center gap-3 p-3 xl:-left-6`}>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-slate-900 text-white">
-          <QrCode size={22} />
-        </span>
-        <div>
-          <p className="text-sm font-semibold">Scan to check out</p>
-          <p className="text-xs text-slate-500">EQ-CAM-0001</p>
+      <motion.div variants={fadeUp} className={`${float} -bottom-2 left-0 flex w-56 items-center gap-3 p-3 xl:-left-6`} aria-hidden>
+        <Bone className="h-11 w-11 shrink-0" />
+        <div className="flex-1 space-y-2">
+          <Bone className="h-4 w-4/5" />
+          <Bone className="h-3 w-1/2" />
         </div>
       </motion.div>
 
-      <motion.div variants={fadeUp} whileHover={{ y: -3 }} className={`${float} -bottom-6 right-2 flex w-60 items-start gap-3 p-3`}>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-amber-50 text-amber-600">
-          <Bell size={18} />
-        </span>
-        <div>
-          <p className="text-sm font-semibold">Return reminder</p>
-          <p className="text-xs text-slate-500">Multimeter is due back in 2 days.</p>
+      <motion.div variants={fadeUp} className={`${float} -bottom-6 right-2 flex w-60 items-start gap-3 p-3`} aria-hidden>
+        <Bone className="h-9 w-9 shrink-0 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Bone className="h-4 w-3/5" />
+          <Bone className="h-3 w-full" />
         </div>
       </motion.div>
     </motion.div>

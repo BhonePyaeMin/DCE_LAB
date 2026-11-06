@@ -102,7 +102,7 @@ export function EmptyState({ icon: Icon, title, description, action }) {
 }
 
 export function Skeleton({ className = '' }) {
-  return <div className={`animate-pulse rounded bg-slate-200/70 ${className}`} />;
+  return <div className={`shimmer rounded ${className}`} aria-hidden />;
 }
 
 export function TableSkeleton({ rows = 5, cols = 5 }) {
