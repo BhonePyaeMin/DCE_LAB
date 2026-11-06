@@ -182,6 +182,9 @@ Each equipment item can have a unique QR code.
 - Check current availability.
 - Verify borrowing records.
 - Simplify equipment check-in and check-out.
+- Scan with a laptop webcam or a phone camera (the rear camera is preferred on phones, with a camera picker when several exist).
+- No camera or permission denied? Take or choose a photo of the label, or type the equipment ID.
+- Camera access needs HTTPS (or localhost); the deployed site already uses HTTPS.
 
 ### 4.6 Maintenance & Damage Reports
 
