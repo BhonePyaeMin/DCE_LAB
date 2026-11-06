@@ -42,6 +42,7 @@ export const listEquipment = asyncHandler(async (req, res) => {
   if (req.query.q) {
     const rx = new RegExp(escapeRegex(String(req.query.q)), 'i');
     filter.$or = [{ name: rx }, { equipmentId: rx }, { brand: rx }, { model: rx }];
+    if (/^\d{1,9}$/.test(String(req.query.q).trim())) filter.$or.push({ itemNo: Number(String(req.query.q).trim()) });
   }
   const [items, total] = await Promise.all([
     Equipment.find(filter).sort({ name: 1 }).skip(skip).limit(limit),
@@ -61,7 +62,9 @@ export const getEquipment = asyncHandler(async (req, res) => {
 
 /** Resolves a scanned QR code to an equipment record plus the borrowing records the viewer may see. */
 export const lookupByCode = asyncHandler(async (req, res) => {
-  const item = await Equipment.findOne({ equipmentId: String(req.params.code).toUpperCase() });
+  // The QR label carries the numeric Item ID; the longer EQ- code is accepted too.
+  const code = String(req.params.code).trim();
+  const item = await Equipment.findOne(/^\d{1,9}$/.test(code) ? { itemNo: Number(code) } : { equipmentId: code.toUpperCase() });
   if (!item || (!item.isActive && req.user.role !== 'admin')) throw new AppError('No equipment matches this code', 404);
 
   const filter = { equipment: item._id, status: { $in: ['pending', ...BORROWING_ACTIVE_STATUSES] } };
@@ -73,9 +76,9 @@ export const lookupByCode = asyncHandler(async (req, res) => {
 export const qrCode = asyncHandler(async (req, res) => {
   const item = await Equipment.findById(req.params.id);
   if (!item) throw new AppError('Equipment not found', 404);
-  const url = `${env.CLIENT_URL.replace(/\/$/, '')}/scan/${item.equipmentId}`;
+  const url = `${env.CLIENT_URL.replace(/\/$/, '')}/scan/${item.itemNo ?? item.equipmentId}`;
   const dataUrl = await QRCode.toDataURL(url, { margin: 1, width: 360, errorCorrectionLevel: 'M' });
-  res.json({ success: true, code: item.equipmentId, url, dataUrl });
+  res.json({ success: true, code: item.equipmentId, itemNo: item.itemNo, url, dataUrl });
 });
 
 export const createEquipment = asyncHandler(async (req, res) => {

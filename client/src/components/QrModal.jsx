@@ -19,7 +19,7 @@ export function QrModal({ equipment, onClose }) {
     name.textContent = equipment.name;
     name.style.cssText = 'font-size:18px;font-weight:600;margin:8px 0 2px';
     const code = win.document.createElement('p');
-    code.textContent = equipment.equipmentId;
+    code.textContent = `Item ID ${equipment.itemNo} - ${equipment.equipmentId}`;
     code.style.cssText = 'font-size:14px;color:#475569;margin:0';
     win.document.body.append(img, name, code);
     img.onload = () => win.print();
@@ -51,7 +51,8 @@ export function QrModal({ equipment, onClose }) {
           <>
             <img src={data.dataUrl} alt={`QR code for ${equipment.equipmentId}`} className="h-56 w-56 border border-slate-200" />
             <p className="mt-3 font-semibold">{equipment.name}</p>
-            <p className="text-sm text-slate-500">{data.code}</p>
+            <p className="text-sm font-medium text-slate-700">Item ID {data.itemNo}</p>
+            <p className="text-xs text-slate-500">{data.code}</p>
             <p className="mt-2 max-w-xs break-all text-xs text-slate-400">{data.url}</p>
           </>
         )}

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Receipt } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../hooks/useFetch.js';
 import { Card, EmptyState, ErrorNotice, PageHeader, Pagination, Segmented, TableSkeleton } from '../components/ui.jsx';
 import { StatusBadge } from '../components/StatusBadge.jsx';
 import { EquipmentImage } from '../components/EquipmentImage.jsx';
 import { BorrowingActions } from '../components/BorrowingActions.jsx';
+import { ReceiptModal } from '../components/Receipt.jsx';
 import { fmtDate } from '../utils/format.js';
 
 const STATUS_FILTERS = ['', 'pending', 'approved', 'borrowed', 'overdue', 'returned', 'damaged', 'rejected', 'cancelled'];
@@ -16,6 +17,7 @@ export default function Borrowings() {
   const [status, setStatus] = useState('');
   const [scope, setScope] = useState('mine');
   const [page, setPage] = useState(1);
+  const [receiptId, setReceiptId] = useState(null);
   const seesAll = isStaff || (isLecturer && scope === 'all');
 
   const { data, loading, error, reload } = useFetch('/borrowings', {
@@ -92,7 +94,10 @@ export default function Borrowings() {
                           <EquipmentImage item={b.equipment} className="h-11 w-14 shrink-0 rounded" />
                           <div className="min-w-0">
                             <p className="font-medium text-slate-900">{b.equipment?.name}</p>
-                            <p className="text-xs text-slate-400">{b.equipment?.equipmentId}</p>
+                            <p className="text-xs text-slate-400">
+                              {b.equipment?.itemNo ? `ID ${b.equipment.itemNo} - ` : ''}
+                              {b.equipment?.equipmentId}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -112,6 +117,11 @@ export default function Borrowings() {
                         <StatusBadge status={b.status} />
                         {b.reviewNote && <span className="mt-1 block max-w-[12rem] text-xs text-slate-400">Note: {b.reviewNote}</span>}
                         {b.damagedQuantity > 0 && <span className="mt-1 block text-xs text-brand-700">{b.damagedQuantity} damaged</span>}
+                        {b.transaction && (
+                          <button type="button" onClick={() => setReceiptId(b.transaction._id)} className="mt-1 flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline">
+                            <Receipt size={12} /> Signed receipt {b.transaction.code}
+                          </button>
+                        )}
                       </td>
                       <td className="td">
                         <BorrowingActions borrowing={b} onChanged={reload} />
@@ -125,6 +135,7 @@ export default function Borrowings() {
         )}
         <Pagination page={data?.page} pages={data?.pages} total={data?.total} onChange={setPage} />
       </Card>
+      {receiptId && <ReceiptModal id={receiptId} onClose={() => setReceiptId(null)} />}
     </>
   );
 }

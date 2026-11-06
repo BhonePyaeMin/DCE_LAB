@@ -31,7 +31,7 @@ export const returnSchema = z.object({
 
 const populate = [
   { path: 'user', select: 'name email role identifier' },
-  { path: 'equipment', select: 'name equipmentId category image' },
+  { path: 'equipment', select: 'name equipmentId itemNo category image' },
 ];
 
 export const createBorrowing = asyncHandler(async (req, res) => {
@@ -73,7 +73,12 @@ export const listBorrowings = asyncHandler(async (req, res) => {
   if (seesAll && req.query.user) filter.user = req.query.user;
 
   const [items, total] = await Promise.all([
-    Borrowing.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate(populate),
+    Borrowing.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate(populate)
+      .populate('transaction', 'code'),
     Borrowing.countDocuments(filter),
   ]);
   const now = Date.now();

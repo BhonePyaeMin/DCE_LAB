@@ -89,6 +89,7 @@ university already handles it, so the calendar covers equipment pick-ups and ret
 
 Runs the laboratory counter day to day.
 
+- Run the Lab counter: borrow equipment in person with both signatures (see 4.4).
 - Approve or reject borrowing requests.
 - Check equipment out and process returns.
 - Manage damaged equipment reports and repair status.
@@ -173,9 +174,24 @@ Borrowing statuses:
 - Overdue
 - Damaged
 
+#### Lab counter: borrowing in person (4 steps)
+
+Staff (lab assistants and administrators) open **Lab counter** to lend equipment without any paper record.
+
+1. **Student ID** - search or type the Student ID. The system shows the student's name, department and email, and only lets the process continue if the student exists, is active and has no overdue equipment.
+2. **Borrow item** - add equipment in either of two ways:
+   - **Scan QR code** - the label holds the item's numeric Item ID (for example `ESP 001` is Item ID `1`); the system looks it up and shows the name, ID and availability.
+   - **Select Item ID** - a searchable list of Item ID, item name and status (Available / Borrowed / Unavailable).
+
+   Available items are added to the borrowing list; items that are already borrowed or unavailable show a notification instead.
+3. **Sign by student** - the student reviews the details and the items with their Item IDs, chooses the return date and signs on screen (touchscreen, mouse or pen).
+4. **Sign by lab assistant** - the assistant confirms the equipment was handed over and signs. The system stores both signatures with the assistant's identity and the date and time, marks the items as **Borrowed** and creates a signed receipt (for example `BR-00001`).
+
+Signed receipts can be opened later from the Borrowing page by staff and by the student they belong to. Students can still send an online request, which staff approve and check out as before.
+
 ### 4.5 QR Code Integration
 
-Each equipment item can have a unique QR code.
+Each equipment item has a unique QR code that links to its numeric Item ID (the longer `EQ-` code still works).
 
 - Scan QR codes to identify equipment.
 - View equipment information.
@@ -346,6 +362,7 @@ MongoDB will store application data using Mongoose models.
 | laboratories | Laboratory information |
 | equipment | Equipment inventory |
 | borrowings | Equipment borrowing records |
+| borrowtransactions | Signed counter receipts (student and lab assistant signatures) |
 | maintenance | Maintenance and damage reports |
 | notifications | User notifications |
 | activityLogs | System activity history |
@@ -563,7 +580,8 @@ All endpoints live under `/api` and (except login and registration) require a `B
 | Users (admin) | `GET/POST /users`, `PATCH/DELETE /users/:id`, `GET /users/activity-logs` |
 | Laboratories | `GET /laboratories`, `GET /laboratories/:id`, admin: `POST`, `PATCH /:id`, `DELETE /:id` |
 | Equipment | `GET /equipment`, `GET /equipment/categories`, `GET /equipment/code/:code`, `GET /equipment/:id/qr`, admin: `POST`, `PATCH /:id`, `DELETE /:id` |
-| Borrowings | `GET/POST /borrowings`, `GET /borrowings/calendar`, staff: `PATCH /:id/review`, `/collect`, `/return`; `PATCH /:id/cancel` |
+| Borrowings | `GET/POST /borrowings`, `GET /borrowings/calendar`, `GET /borrowings/transactions/:id`, staff: `PATCH /:id/review`, `/collect`, `/return`; `PATCH /:id/cancel` |
+| Lab counter | staff: `GET /borrowings/counter/students?q=`, `GET /borrowings/counter/items?q=`, `POST /borrowings/counter` (items, due date, both signatures) |
 | Maintenance | `GET/POST /maintenance`, `GET /maintenance/:id`, staff: `PATCH /:id` |
 | Notifications | `GET /notifications`, `PATCH /:id/read`, `PATCH /read-all`, `DELETE /:id` |
 | Files | `GET /files/:id` (images stored in MongoDB in production) |

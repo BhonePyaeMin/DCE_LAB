@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import mongoose from 'mongoose';
 import { env } from './env.js';
+import { ensureItemNumbers } from '../services/itemNumbers.js';
 
 let memoryServer = null;
 
@@ -33,6 +34,7 @@ export async function connectDB() {
   }
 
   await mongoose.connect(uri);
+  await ensureItemNumbers();
   console.log('[db] connected');
   return mongoose.connection;
 }

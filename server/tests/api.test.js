@@ -131,7 +131,7 @@ test('equipment: photo required, generated IDs, QR codes, admin-only inventory e
 
   res = await api('GET', `/equipment/${ids.equipment}/qr`, { token: tokens.admin });
   assert.ok(res.body.dataUrl.startsWith('data:image/png;base64,'));
-  assert.ok(res.body.url.endsWith(`/scan/${code}`));
+  assert.ok(res.body.url.endsWith(`/scan/${res.body.itemNo}`), 'QR links to the numeric Item ID');
 
   res = await api('GET', `/equipment/code/${code}`, { token: tokens.student });
   assert.equal(res.status, 200);
@@ -308,4 +308,61 @@ test('production storage: images are kept in MongoDB and served by /api/files; c
   } finally {
     e2.CRON_SECRET = '';
   }
+});
+
+test('counter: student lookup, item IDs, signed borrowing and receipt', async () => {
+  const sig = `data:image/png;base64,${PNG.toString('base64')}`;
+  const mk = async (name, quantity) => (await api('POST', '/equipment', { token: tokens.admin, form: equipmentForm({ name, category: 'Arduino and ESP32', quantity, maxBorrowDays: 3 }) })).body.equipment;
+  const esp1 = await mk('ESP 001', 1);
+  const esp2 = await mk('ESP 002', 1);
+  assert.ok(Number.isInteger(esp1.itemNo) && esp2.itemNo === esp1.itemNo + 1, 'items get sequential numeric IDs');
+
+  // A QR code resolves by numeric Item ID as well as the EQ- code.
+  let res = await api('GET', `/equipment/code/${esp1.itemNo}`, { token: tokens.assistant });
+  assert.equal(res.body.equipment.name, 'ESP 001');
+  assert.ok((await api('GET', `/equipment/${esp1._id}/qr`, { token: tokens.admin })).body.url.endsWith(`/scan/${esp1.itemNo}`));
+
+  // Step 1: students cannot use the counter; staff find the student by Student ID.
+  assert.equal((await api('GET', '/borrowings/counter/students', { token: tokens.student })).status, 403);
+  await User.updateOne({ email: 'stu@t.test' }, { identifier: '6531500777', department: 'DCE' });
+  res = await api('GET', '/borrowings/counter/students?q=6531500777', { token: tokens.assistant });
+  assert.equal(res.body.items.length, 1);
+  assert.equal(res.body.items[0].eligible, true);
+  const student = res.body.items[0];
+
+  // Step 2: the item list shows ID, name and status.
+  res = await api('GET', `/borrowings/counter/items?q=${esp2.itemNo}`, { token: tokens.assistant });
+  assert.equal(res.body.items[0].name, 'ESP 002');
+  assert.equal(res.body.items[0].status, 'available');
+
+  // Steps 3 and 4 need both signatures.
+  const body = { student: student._id, items: [{ equipment: esp1._id, quantity: 1 }, { equipment: esp2._id, quantity: 1 }], dueDate: inDays(2), purpose: 'Project', studentSignature: sig, assistantSignature: sig };
+  assert.equal((await api('POST', '/borrowings/counter', { token: tokens.assistant, body: { ...body, assistantSignature: undefined } })).status, 400);
+  assert.equal((await api('POST', '/borrowings/counter', { token: tokens.assistant, body: { ...body, studentSignature: 'data:image/png;base64,AAAA' } })).status, 400, 'signature must be a real PNG');
+  assert.equal((await api('POST', '/borrowings/counter', { token: tokens.student, body })).status, 403);
+  assert.equal((await api('POST', '/borrowings/counter', { token: tokens.assistant, body: { ...body, dueDate: inDays(10) } })).status, 400, 'respects max borrow days');
+
+  res = await api('POST', '/borrowings/counter', { token: tokens.assistant, body });
+  assert.equal(res.status, 201);
+  const txn = res.body.transaction;
+  assert.match(txn.code, /^BR-\d{5}$/);
+  assert.equal(txn.items.length, 2);
+  assert.equal(txn.assistant.name, 'assistant');
+
+  // The items are now borrowed and no longer available.
+  assert.equal((await Equipment.findById(esp1._id)).available, 0);
+  res = await api('GET', `/borrowings/counter/items?q=ESP 001`, { token: tokens.assistant });
+  assert.equal(res.body.items[0].status, 'borrowed');
+  assert.equal((await api('POST', '/borrowings/counter', { token: tokens.assistant, body: { ...body, items: [body.items[0]] } })).status, 409, 'unavailable items are refused');
+  const loans = await Borrowing.find({ transaction: txn._id });
+  assert.deepEqual(loans.map((l) => l.status), ['borrowed', 'borrowed']);
+
+  // Receipts are visible to staff and the student, nobody else.
+  assert.equal((await api('GET', `/borrowings/transactions/${txn._id}`, { token: tokens.student })).body.transaction.studentSignature, sig);
+  assert.equal((await api('GET', `/borrowings/transactions/${txn._id}`, { token: tokens.lecturer })).status, 404);
+  assert.equal((await api('GET', `/borrowings/transactions/${txn._id}`, { token: tokens.admin })).status, 200);
+
+  // Returning through the normal flow restores stock.
+  assert.equal((await api('PATCH', `/borrowings/${loans[0]._id}/return`, { token: tokens.assistant, body: {} })).status, 200);
+  assert.equal((await Equipment.findById(esp1._id)).available, 1);
 });

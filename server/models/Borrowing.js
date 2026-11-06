@@ -18,6 +18,7 @@ const borrowingSchema = new mongoose.Schema(
     damagedQuantity: { type: Number, min: 0, default: 0 },
     returnNote: { type: String, trim: true, maxlength: 500 },
     processedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    transaction: { type: mongoose.Schema.Types.ObjectId, ref: 'BorrowTransaction' }, // set when borrowed at the counter
     pickupReminderSent: { type: Boolean, default: false },
     reminderSent: { type: Boolean, default: false },
     overdueNotified: { type: Boolean, default: false },

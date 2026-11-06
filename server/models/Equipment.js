@@ -4,6 +4,7 @@ import { nextSequence } from './Counter.js';
 
 const equipmentSchema = new mongoose.Schema(
   {
+    itemNo: { type: Number, unique: true, sparse: true }, // short numeric Item ID printed on the QR label
     equipmentId: { type: String, unique: true, index: true }, // generated, e.g. EQ-MCU-0001
     name: { type: String, required: true, trim: true, maxlength: 140 },
     category: { type: String, enum: Object.keys(EQUIPMENT_CATEGORIES), required: true, index: true },
@@ -23,6 +24,7 @@ const equipmentSchema = new mongoose.Schema(
 );
 
 equipmentSchema.pre('validate', async function generateId(next) {
+  if (!this.itemNo) this.itemNo = await nextSequence('equipment-itemNo');
   if (this.equipmentId) return next();
   const prefix = EQUIPMENT_CATEGORIES[this.category];
   if (!prefix) return next();

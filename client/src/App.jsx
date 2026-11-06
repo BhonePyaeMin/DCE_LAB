@@ -20,6 +20,7 @@ const Users = lazy(() => import('./pages/Users.jsx'));
 const ActivityLogs = lazy(() => import('./pages/ActivityLogs.jsx'));
 const SettingsPage = lazy(() => import('./pages/Settings.jsx'));
 const Scan = lazy(() => import('./pages/Scan.jsx'));
+const Counter = lazy(() => import('./pages/Counter.jsx'));
 
 export default function App() {
   return (
@@ -44,6 +45,9 @@ export default function App() {
             <Route path="scan" element={<Scan />} />
             <Route path="scan/:code" element={<Scan />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route element={<ProtectedRoute roles={['admin', 'assistant']} />}>
+              <Route path="counter" element={<Counter />} />
+            </Route>
             <Route element={<ProtectedRoute roles={['admin', 'lecturer', 'assistant']} />}>
               <Route path="analytics" element={<Analytics />} />
             </Route>

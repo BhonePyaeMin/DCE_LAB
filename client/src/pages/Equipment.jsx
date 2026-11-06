@@ -188,7 +188,9 @@ function BorrowModal({ item, onClose, onCreated }) {
           <EquipmentImage item={item} className="h-14 w-20 shrink-0 rounded" />
           <p className="min-w-0 text-sm">
             <span className="block truncate font-medium">{item.name}</span>
-            <span className="block text-xs text-slate-400">{item.equipmentId}</span>
+            <span className="block text-xs text-slate-400">
+              ID {item.itemNo} - {item.equipmentId}
+            </span>
             <span className="block text-xs text-slate-500">
               {item.available} available - up to {item.maxBorrowDays} days
             </span>
@@ -323,7 +325,7 @@ export default function Equipment() {
                         {item.name}
                       </h2>
                       <p className="text-xs text-slate-400">
-                        {item.equipmentId}
+                        ID {item.itemNo} - {item.equipmentId}
                         {!item.isActive && ' - hidden'}
                       </p>
                     </div>

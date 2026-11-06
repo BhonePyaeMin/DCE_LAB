@@ -18,6 +18,8 @@ const STATUS_TONE = {
   cancelled: 'slate',
   completed: 'green',
   borrowed: 'violet',
+  available: 'green',
+  unavailable: 'slate',
   returned: 'green',
   overdue: 'red',
   damaged: 'red',
